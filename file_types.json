@@ -1,0 +1,20 @@
+{
+    "file_types_list": [
+        ".DOC", ".DOCX", ".EML", ".MSG", ".ODT", ".PAGES", ".RTF", ".TEX", ".TXT", ".WPD",
+        ".AAE", ".CSV", ".DAT", ".KEY", ".LOG", ".MPP", ".OBB", ".PPT", ".PPTX",
+        ".RPT", ".TAR", ".VCF", ".XML", ".AIF", ".FLAC", ".M3U", ".M4A", ".MID", ".MP3",
+        ".OGG", ".WAV", ".WMA", ".3GP", ".ASF", ".AVI", ".FLV", ".M4V", ".MOV", ".MP4",
+        ".MPG", ".SRT", ".SWF", ".TS", ".VOB", ".WMV", ".3DM", ".3DS", ".BLEND", ".DAE",
+        ".FBX", ".MAX", ".OBJ", ".BMP", ".DCM", ".DDS", ".DJVU", ".GIF", ".HEIC", ".JPG",
+        ".PNG", ".PSD", ".TGA", ".TIF", ".AI", ".CDR", ".EMF", ".EPS", ".PS", ".SKETCH",
+        ".SVG", ".VSDX", ".INDD", ".OXPS", ".PDF", ".PMD", ".PUB", ".QXP", ".XPS",
+        ".NUMBERS", ".ODS", ".XLR", ".XLS", ".XLSX", ".ACCDB", ".CRYPT14", ".DB", ".MDB",
+        ".ODB", ".PDB", ".SQL", ".SQLITE", ".APK", ".BAT", ".BIN", ".CMD",
+        ".EXE", ".IPA", ".JAR", ".RUN", ".SH", ".DEM", ".GAM", ".GBA", ".NES", ".PAK",
+        ".PKG", ".ROM", ".SAV", ".DGN", ".DWG", ".DXF", ".STEP", ".STL", ".STP", ".GPX",
+        ".KML", ".KMZ", ".OSM", ".ASP", ".ASPX", ".CER", ".CFM", ".CSR", ".CSS", ".HTML",
+        ".JS", ".JSON", ".JSP", ".PHP", ".XHTML", ".CRX", ".ECF", ".PLUGIN", ".SAFARIEXTZ",
+        ".XPI", ".FNT", ".OTF", ".TTF", ".WOFF", ".WOFF2", ".ANI", ".CAB", ".CPL", ".CUR",
+        ".DESKTHEMEPACK", ".DLL", ".DMP", ".DRV", ".ICNS", ".ICO"
+    ]
+}

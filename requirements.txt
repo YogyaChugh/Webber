@@ -1,0 +1,8 @@
+urlextract
+bs4
+cssbeautifier
+jsbeautifier
+chardet
+pywebview
+logging
+html5lib
