@@ -3,7 +3,6 @@ import urllib.request
 import exceptions
 import os
 import json
-from urlextract import URLExtract
 from bs4 import BeautifulSoup
 import cssbeautifier
 import jsbeautifier
@@ -18,8 +17,11 @@ import time
 import asyncio
 import loading_animation
 import magic
+import tldextract
 
-extractor = URLExtract()
+
+def dir(self) -> str:
+    return os.path.join(sys._MEIPASS, self._DATA_DIR)
 
 
 class Webpage:
@@ -34,7 +36,7 @@ class Webpage:
 
         self.failed_downloads = []
 
-        self.loc = website.location
+        self.loc = os.path.join(os.getcwd(), website.location)
 
         # Sets
         self.main_files = set() # Contains .html, .css and .js files !
@@ -227,11 +229,20 @@ class Webpage:
                     content_to_search = str(i)
 
                 # This takes care of all absolute urls
-                urls = urls.union(extractor.find_urls(content_to_search))
+                urlsji = re.findall(r'https?://[^\s]+', content_to_search)
+                for url in urlsji:
+                    ext = tldextract.extract(url)
+                    if ext.suffix:  # Valid TLD
+                        urls.add(url)
                 # This takes care of relative urls
                 final_content += content_to_search
         else:
             final_content = content
+            urlsji = re.findall(r'https?://[^\s]+', content_to_search)
+            for url in urlsji:
+                ext = tldextract.extract(url)
+                if ext.suffix:  # Valid TLD
+                    urls.add(url)
             urls = urls.union(extractor.find_urls(final_content))
         self.logs.write("\nAUTO FIND COMPLETE :)")
         for i in urls.copy():
@@ -345,8 +356,7 @@ class Webpage:
             temp_link = urlparse(i)
             try:
                 atempi = urllib.request.urlopen(i.replace(" ","%20")).read()
-                with open("file_types.json","r") as f:
-                    mimes = json.load(f)['mime_types']
+                mimes = eval(os.environ.get('file_mime_types'))
                 type_file = magic.from_buffer(atempi, mime=True)
                 if type_file in ['text/html','text/css','text/js','text/plain']:
                     found = False
@@ -539,10 +549,90 @@ if __name__ == "__main__":
     else:
         os.system("clear")
 
+
+    file = {
+        "file_types_list": [
+            ".DOC", ".DOCX", ".EML", ".MSG", ".ODT", ".PAGES", ".RTF", ".TEX", ".TXT", ".WPD",
+            ".AAE", ".CSV", ".DAT", ".KEY", ".LOG", ".MPP", ".OBB", ".PPT", ".PPTX",
+            ".RPT", ".TAR", ".VCF", ".XML", ".AIF", ".FLAC", ".M3U", ".M4A", ".MID", ".MP3",
+            ".OGG", ".WAV", ".WMA", ".3GP", ".ASF", ".AVI", ".FLV", ".M4V", ".MOV", ".MP4",
+            ".MPG", ".SRT", ".SWF", ".TS", ".VOB", ".WMV", ".3DM", ".3DS", ".BLEND", ".DAE",
+            ".FBX", ".MAX", ".OBJ", ".BMP", ".DCM", ".DDS", ".DJVU", ".GIF", ".HEIC", ".JPG",
+            ".PNG", ".PSD", ".TGA", ".TIF", ".AI", ".CDR", ".EMF", ".EPS", ".PS", ".SKETCH",
+            ".SVG", ".VSDX", ".INDD", ".OXPS", ".PDF", ".PMD", ".PUB", ".QXP", ".XPS",
+            ".NUMBERS", ".ODS", ".XLR", ".XLS", ".XLSX", ".ACCDB", ".CRYPT14", ".DB", ".MDB",
+            ".ODB", ".PDB", ".SQL", ".SQLITE", ".APK", ".BAT", ".BIN", ".CMD",
+            ".EXE", ".IPA", ".JAR", ".RUN", ".SH", ".DEM", ".GAM", ".GBA", ".NES", ".PAK",
+            ".PKG", ".ROM", ".SAV", ".DGN", ".DWG", ".DXF", ".STEP", ".STL", ".STP", ".GPX",
+            ".KML", ".KMZ", ".OSM", ".ASP", ".ASPX", ".CER", ".CFM", ".CSR", ".CSS", ".HTML",
+            ".JS", ".JSON", ".JSP", ".PHP", ".XHTML", ".CRX", ".ECF", ".PLUGIN", ".SAFARIEXTZ",
+            ".XPI", ".FNT", ".OTF", ".TTF", ".WOFF", ".WOFF2", ".ANI", ".CAB", ".CPL", ".CUR",
+            ".DESKTHEMEPACK", ".DLL", ".DMP", ".DRV", ".ICNS", ".ICO"
+        ],
+        "mime_types": {
+          "application/msword": ".DOC",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".DOCX",
+          "message/rfc822": ".EML",
+          "application/vnd.oasis.opendocument.text": ".ODT",
+          "application/vnd.apple.pages": ".PAGES",
+          "application/rtf": ".RTF",
+          "text/x-tex": ".TEX",
+          "text/plain": ".TXT",
+          "text/csv": ".CSV",
+          "application/vnd.ms-powerpoint": ".PPT",
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".PPTX",
+          "application/x-tar": ".TAR",
+          "text/vcard": ".VCF",
+          "application/xml": ".XML",
+          "audio/x-aiff": ".AIF",
+          "audio/flac": ".FLAC",
+          "audio/mp4": ".M4A",
+          "audio/mpeg": ".MP3",
+          "audio/ogg": ".OGG",
+          "audio/x-wav": ".WAV",
+          "audio/x-ms-wma": ".WMA",
+          "audio/3gpp": ".3GP",
+          "video/x-msvideo": ".AVI",
+          "video/x-flv": ".FLV",
+          "video/mp4": ".MP4",
+          "video/quicktime": ".MOV",
+          "video/mpeg": ".MPG",
+          "application/vnd.adobe.flash.movie": ".SWF",
+          "text/vnd.trolltech.linguist": ".TS",
+          "video/x-ms-wmv": ".WMV",
+          "image/bmp": ".BMP",
+          "image/gif": ".GIF",
+          "image/heic": ".HEIC",
+          "image/jpeg": ".JPG",
+          "image/png": ".PNG",
+          "image/vnd.adobe.photoshop": ".PSD",
+          "image/tiff": ".TIF",
+          "application/postscript": ".PS",
+          "image/svg+xml": ".SVG",
+          "application/pdf": ".PDF",
+          "application/vnd.ms-excel": ".XLS",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".XLSX",
+          "application/vnd.android.package-archive": ".APK",
+          "application/x-msdos-program": ".EXE",
+          "application/java-archive": ".JAR",
+          "text/x-sh": ".SH",
+          "text/html": ".HTML",
+          "text/css": ".CSS",
+          "text/javascript": ".JS",
+          "application/json": ".JSON",
+          "application/xhtml+xml": ".XHTML",
+          "font/ttf": ".TTF",
+          "font/otf": ".OTF",
+          "font/woff": ".WOFF",
+          "font/woff2": ".WOFF2",
+          "image/vnd.microsoft.icon": ".ICO"
+        }
+
+    }
+
     # OS VARIABLES
-    with open('file_types.json') as f:
-        file = json.load(f)
     os.environ['file_types'] = str(file['file_types_list'])
+    os.environ['file_mime_types'] = str(file['mime_types'])
     os.environ['REFETCH'] = str('False')
 
 

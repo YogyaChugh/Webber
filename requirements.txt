@@ -7,3 +7,4 @@ pywebview
 logging
 html5lib
 python-magic-bin
+tldextract
