@@ -8,10 +8,16 @@ def load_animation(display_text, event):
     animation = "|/-\\"
     i = 0
     anicount = 0
-    ls_len = len(display_text)
+    k=0
+    p=0
+    ls_len = len(display_text[p])
     while event.is_set():
+        if k%50==0:
+            p+=1
+            ls_len = len(display_text[p%len(display_text)])
+            i = 0
         time.sleep(0.075)
-        load_str_list = list(display_text)
+        load_str_list = list(display_text[p%len(display_text)])
 
         x = ord(load_str_list[i])
         y = 0
@@ -30,10 +36,11 @@ def load_animation(display_text, event):
         sys.stdout.write("\r"+res+animation[anicount])
         sys.stdout.flush()
 
-        display_text = res
+        display_text[p%len(display_text)] = res
 
         anicount = (anicount + 1)%4
         i = (i + 1) % ls_len
+        k+=1
     if os.name == "nt":
         os.system("cls")
     else:
@@ -43,4 +50,4 @@ def load_animation(display_text, event):
 if __name__ == "__main__":
     a = Event()
     a.set()
-    load_animation("Loading animation", a)
+    load_animation(["Loading animation ","Scraping Earth"], a)

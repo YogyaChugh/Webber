@@ -1,0 +1,16 @@
+{
+    "Website 1": {
+        "url": "https://snakehustle.netlify.app",
+        "download_res": true,
+        "download_cors_res": true,
+        "cors": false,
+        "cors_download_res": true,
+        "cors_download_cors_res": false,
+        "max_cors": 2,
+        "same_origin_deviation": 1,
+        "location": "",
+        "maintain_logs": "",
+        "show_failed_files": "",
+        "refetch": false
+    }
+}

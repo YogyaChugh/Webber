@@ -14,13 +14,16 @@ import logging
 import re
 import traceback
 import sys
+import time
+import asyncio
 import loading_animation
+import magic
 
 extractor = URLExtract()
 
 
 class Webpage:
-    def __init__(self,url, loc,website,download_res = True, download_cors_res = True):
+    def __init__(self,url, website,download_res = True, download_cors_res = True):
         self.url = url
         self.download_res = download_res
         self.download_cors_res = download_cors_res
@@ -31,7 +34,7 @@ class Webpage:
 
         self.failed_downloads = []
 
-        self.loc = loc
+        self.loc = website.location
 
         # Sets
         self.main_files = set() # Contains .html, .css and .js files !
@@ -76,15 +79,24 @@ class Webpage:
     def download_resource(self,url,file_type = None):
         urlpath = str(url.path)
         file_type = file_type
-        if not file_type:
+        if not file_type or file_type==".txt":
             if ".css" == urlpath[-4:]:
                 file_type = ".css"
             elif ".js" == urlpath[-3:]:
                 file_type = ".js"
+            elif ".html" == urlpath[-5:]:
+                file_type = ".html"
+            elif ".xml" == urlpath[-4:]:
+                file_type = ".xml"
             else:
+                for i in eval(os.environ.get('file_types')):
+                    if i.lower() in urlpath.lower():
+                        file_type = i.lower()
+                        break
+            if file_type==None:
                 file_type = ".html"
         try:
-            if file_type in ['.html','.css','.js']:
+            if file_type in ['.html','.css','.js','.xml','.txt']:
                 self.logs.write(f"\n\nURL REQUESTED: {url.geturl()}")
             else:
                 self.logs.write(f"\n\nRESOURCE REQUESTED: {url.geturl()}")
@@ -101,16 +113,19 @@ class Webpage:
     
         if file_type == ".html":
             content = content.decode("utf-8")
-            content = BeautifulSoup(content,features="html5lib")
+            content = BeautifulSoup(content, features="html5lib")
         elif file_type == ".css":
             content = content.decode("utf-8")
             content = str(cssbeautifier.beautify(content))
         elif file_type == ".js":
             content = content.decode("utf-8")
             content = str(jsbeautifier.beautify(content))
+        elif file_type == ".xml":
+            content = content.decode('utf-8')
+            content = BeautifulSoup(content, features="xml")
         return {'file_content': content, 'file_type': file_type}
     
-    def create_offline_location(self, file_loc_url, file_type, main=False, inside_folder = None):
+    def create_offline_location(self, file_loc_url, file_type, main=False, inside_folder = ""):
         fileName = "index.html"
         file_loc_url = file_loc_url.replace("\\","/")
         temp_split = file_loc_url.split("/")
@@ -139,9 +154,14 @@ class Webpage:
                 new_file_path += file_path[i]
 
         if inside_folder:
-            tempy = self.loc + ("/" if self.loc else "") + inside_folder + "/" + new_file_path + ("/" if new_file_path else "")
+            tempy = inside_folder + "/" + new_file_path + ("/" if new_file_path else "")
         else:
-            tempy = self.loc + ("/" if self.loc else "") + new_file_path + ("/" if new_file_path else "")
+            tempy = new_file_path + ("/" if new_file_path else "")
+
+        if self.website.url.hostname==temp.hostname:
+            tempy = self.loc + ("/" if self.loc else "") + str(temp.hostname) + ("/" if temp.hostname else "") + tempy
+        else:
+            tempy = self.loc + ("/" if self.loc else "") + str(self.website.url.hostname) + ("/" if str(self.website.url.hostname) else "") + str(temp.hostname) + ("/" if str(temp.hostname) else "") + tempy
         if main:
             self.file_location = tempy
             self.fileName = fileName
@@ -160,7 +180,7 @@ class Webpage:
         if file_type==".html" and fileName[-5:]!='.html':
             enc = "w"
         else:
-            if file_type in [".html",".css",".js"]:
+            if file_type in [".html",".css",".js",".xml"]:
                 enc = "w"
             else:
                 encoding = None
@@ -191,6 +211,7 @@ class Webpage:
                         encoding = result['encoding']
                         decoded_data = file_content.decode(encoding, errors="replace")
                         file.write(decoded_data)
+        self.logs.write(f"\nFILE SAVED SUCCESSFULLY ! {file_loc + fileName}\n\n")
     
     def find_urls(self, content, is_html = False):
         urls = set()
@@ -211,6 +232,7 @@ class Webpage:
                 final_content += content_to_search
         else:
             final_content = content
+            urls = urls.union(extractor.find_urls(final_content))
         self.logs.write("\nAUTO FIND COMPLETE :)")
         for i in urls.copy():
             if i in self.website.urls_searched:
@@ -314,31 +336,52 @@ class Webpage:
         if not file_types:
             raise exceptions.FileDownloadError(self.url)
         
+        ppp = self.create_offline_location(self.url, content.get('file_type'),True)
+        
         just_chilling = urls[1]
         for i in urls[0]:
-            found = None
+            found = True
+            found_type = None
             temp_link = urlparse(i)
-            for file_type in file_types:
-                if file_type not in [".HTML",".CSS",".JS"]:
-                    bobby = i[(len(i) - len(file_type)):].lower()
-                    if file_type.lower() == bobby:
-                        found = file_type.lower()
+            try:
+                atempi = urllib.request.urlopen(i.replace(" ","%20")).read()
+                with open("file_types.json","r") as f:
+                    mimes = json.load(f)['mime_types']
+                type_file = magic.from_buffer(atempi, mime=True)
+                if type_file in ['text/html','text/css','text/js','text/plain']:
+                    found = False
+                    if not self.website.cors and str(temp_link.hostname)!=str(self.website.url.hostname):
+                        break
+                found_type = mimes[type_file].lower()
+            except:
+                for file_type in file_types:
+                    if file_type not in [".HTML",".CSS",".JS"]:
+                        bobby = i[(len(i) - len(file_type)):].lower()
+                        if file_type.lower() == bobby:
+                            found_type = file_type.lower()
+                    else:
+                        found = False
             if found:
                 self.res_files.add(i)
                 if self.download_res and (temp_link.hostname == link.hostname or self.download_cors_res):
                     try:
-                        temp_content = self.download_resource(temp_link, found)
+                        temp_content = self.download_resource(temp_link, found_type)
                     except Exception as e:
                         self.failed_downloads.append(i)
                         continue
                     path = self.create_offline_location(i,temp_content.get('file_type'))
                     go_on = True
-                    if (os.path.exists(path[0] + path[1]) and eval(os.environ.get("REFETCH"))):
-                        go_on = True
-                    else:
+                    if (os.path.exists(path[0] + path[1]) and not eval(os.environ.get("REFETCH"))):
                         go_on = False
+                    else:
+                        go_on = True
                     
-                    relpath = path[0].replace(self.loc + "/","") + path[1]
+                    relpath = path[0] + path[1]
+                    # rint("Relpath: ",relpath)
+                    # rint("Main file loc: ",ppp[0])
+                    relpath = os.path.relpath(relpath, ppp[0])
+                    # print("Found path: ",relpath)
+                    relpath = (rf"{relpath}").replace("\\","/")
                     if go_on:
                         self.save_file(path[0],path[1],temp_content.get('file_content'),temp_content.get('file_type'))
                     if just_chilling.get(i):
@@ -349,8 +392,9 @@ class Webpage:
 
             else:
                 self.main_files.add(i)
+                if i not in just_chilling:
+                    just_chilling[i] = None
 
-        ppp = self.create_offline_location(self.url, content.get('file_type'),True)
         go_on = True
         if (os.path.exists(ppp[0] + ppp[1])):
             if ".html" in ppp[1] or ".css" in ppp[1] or ".js" in ppp[1]:
@@ -374,11 +418,12 @@ class Webpage:
 
 
 class Website:
-    def __init__(self, url, scrape_level, location = ".", cors = True):
-        print(f"WEB-PAGE CREATED: {url}")
+    location = ""
+    def __init__(self, url, scrape_level, location = "", cors = True):
         self.url = urlparse(url)
-        self.base_file = Webpage(url,location,self)
+        self.base_file = Webpage(url, self)
         self.location = location
+        self.index_file_location = None
         self.cors = cors
         self.scrape_level = scrape_level
 
@@ -386,30 +431,59 @@ class Website:
 
         self.urls_searched = set()
 
+        self.thread_count = 0
+
         self.threads = []
         self.outputs = {}
 
+        self.urls_inner_scraped = {url}
+
         self.urls_hostname_list = {self.url.hostname}
 
-    def download(self):
+    async def download(self):
+        self.threads = []
+        self.outputs = {}
+        self.urls_searched = set()
+        self.urls_inner_scraped = {self.url.geturl()}
+        self.failed = False
+        self.index_file_location = None
+        # Event set for loading animation
+        temp_event = threading.Event()
+        temp_event.set()
+        threading.Thread(target=loading_animation.load_animation, args=(["CLIMBING MT.EVEREST TO FETCH YOUR WEBSITE ","FIGHTING THE DEVILS TO PREVENT COPYRIGHT  ","GOING TO MARS FOR FASTER INTERNET SPEEEED ","ASKING YOUR CRUSH FOR APPROVAL # FETCHING "], temp_event)).start()
         b = threading.Thread(target=self.download_webpage, args=(self.base_file, self.scrape_level))
         b.start()
-        self.threads.append([b,self.url])
+        self.threads.append([b,self.url.geturl()])
         self.urls_hostname_list = {self.url.hostname}
         for i in self.threads:
             i[0].join()
+        dada = 0
         for i in self.threads:
-            if self.outputs.get(i[0]):
+            if dada==0:
+                try:
+                    self.index_file_location = self.outputs[i[1]][0]
+                except:
+                    pass
+                dada+=1
+            if self.outputs.get(i[1]):
                 gg_temp = self.outputs[i[1]]
                 with open(gg_temp[0],"r", encoding="utf-8") as fi:
                     a = fi.read()
                 with open(gg_temp[0],"w", encoding="utf-8") as fi:
                     temp = gg_temp[1]
-                    for i in temp:
-                        a = a.replace(temp[i], gg_temp[i][0])
+                    for j in temp:
+                        if self.outputs.get(j):
+                            relpath = os.path.relpath(self.outputs[j][0],gg_temp[0])
+                            relpath = (rf"{relpath}").replace("\\","/")
+                            if temp[j]:
+                                a = a.replace(temp[j], relpath)
+                            else:
+                                a = a.replace(j, relpath)
                     fi.write(a)
             else:
-                globals()['logger'].critical(f"FAILED REPLACING URLS FOR {i[0]}")
+                globals()['logger'].critical(f"FAILED REPLACING URLS FOR {i[0]} !\nOUTPUTS: {self.outputs}")
+
+        temp_event.clear()
         if not self.failed:
             globals()['logger'].info(f"\n\t\t\t\t================================\n\t\t\t\tSUCCESS SCRAPING WEBSITE {self.url.geturl()}\n\t\t\t\t================================\n")
             return True
@@ -418,69 +492,103 @@ class Website:
             return False
     
     def download_webpage(self,file,level):
-        # try:
-        if not file:
-            return None
-        path, main_files, prev_names, res_files = file.download(len(self.threads)-1)
-        if file.failed_downloads:
-            globals()['logger'].critical(f"\n================================\nDOWNLOADS FAILED FOR {file.url} ARE:\n")
-            for a in file.failed_downloads:
-                globals()['logger'].critical(f"\n\t\t{a}")
-        for i in main_files:
-            if i in self.urls_searched:
-                continue
-            self.urls_searched.add(i)
-            temp = urlparse(i)
-            if (temp.hostname == self.url.hostname and (level+1)>0):
-                web_page = Webpage(i, self.location, self)
-                t = threading.Thread(target=self.download_webpage, args=(web_page, level))
-                t.start()
-                globals()['logger'].info(f"\nThread Started: {len(self.threads)}")
-                self.threads.append([t, i])
-            elif level>0 and self.cors:
-                web_page = Webpage(i, self.location, self)
-                t = threading.Thread(target=self.download_webpage, args=(web_page, level-1))
-                t.start()
-                globals()['logger'].info(f"\nThread Started: {len(self.threads)}")
-                self.threads.append([t, i])
-            else:
-                globals()['logger'].warning(f"\nURL SKIPPED TO PREVENT RECURSION: {i}")
+        try:
+            if not file:
+                return None
+            path, main_files, prev_names, res_files = file.download(len(self.threads)-1)
+            if file.failed_downloads:
+                globals()['logger'].critical(f"\n================================\nDOWNLOADS FAILED FOR {file.url} ARE:\n")
+                for a in file.failed_downloads:
+                    globals()['logger'].critical(f"\n\t\t{a}")
+            for i in main_files:
+                if i in self.urls_inner_scraped:
+                    continue
+                self.urls_inner_scraped.add(i)
+                temp = urlparse(i)
+                if (temp.hostname == self.url.hostname and (level+1)>0):
+                    web_page = Webpage(i, self)
+                    t = threading.Thread(target=self.download_webpage, args=(web_page, level))
+                    t.start()
+                    self.thread_count +=1
+                    globals()['logger'].info(f"\nThread Started: {len(self.threads)}")
+                    self.threads.append([t, i])
+                elif level>0 and self.cors:
+                    web_page = Webpage(i, self)
+                    t = threading.Thread(target=self.download_webpage, args=(web_page, level-1))
+                    t.start()
+                    self.thread_count +=1
+                    globals()['logger'].info(f"\nThread Started: {len(self.threads)}")
+                    self.threads.append([t, i])
+                else:
+                    globals()['logger'].warning(f"\nURL SKIPPED TO PREVENT RECURSION: {i}")
 
-        # except:
-        #     exc_type, exc_value, exc_tb = sys.exc_info()
-        #     tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
-        #     exception_string = ''.join(tb.format())
-        #     globals()['logger'].critical(exception_string)
-        #     self.failed = True
-        #     return None
+        except Exception as e:
+            exc_type, exc_value, exc_tb = sys.exc_info()
+            tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
+            exception_string = ''.join(tb.format())
+            globals()['logger'].critical(exception_string)
+            self.thread_count -=1
+            return
 
         self.outputs[file.url] = (path,prev_names)
+        self.thread_count -=1
 
-if __name__ == "__main__":
+def main():
+    if os.name == "nt":
+        os.system("cls")
+    else:
+        os.system("clear")
+
+    # OS VARIABLES
     with open('file_types.json') as f:
         file = json.load(f)
     os.environ['file_types'] = str(file['file_types_list'])
     os.environ['REFETCH'] = str('False')
-    print("=======================\n        WEBBER\n=======================")
+
+
+    # INPUT
+    print("\t\t\t=======================\n\t\t\t\tWEBBER\n\t\t\t=======================")
     link = input("Enter URL: ")
+    file_location = input("Enter file location( Press 'Enter' for current directory ): ")
+    level = int(input("Enter scrape level: "))
+    print("=======================================================")
+
+    # Make dirs
     ll = urlparse(link)
-    os.makedirs(str(ll.hostname),exist_ok=True)
-    logging.basicConfig(filename=f"{str(ll.hostname)}/webber.log",level=logging.DEBUG)
+
+    # Logging
+    if file_location.strip()!="":
+        os.makedirs(file_location)
+        logging.basicConfig(filename=f"{file_location}/{ll.hostname}.log",level=logging.DEBUG)
+    else:
+        logging.basicConfig(filename=f"{ll.hostname}.log",level=logging.DEBUG)
     logger = logging.getLogger(__name__)
     globals()["logger"] = logger
-    logger.info(f"WEBSITE SCRAPED: {link}\n\n")
-    temp_event = threading.Event()
-    temp_event.set()
-    loading_animation.load_animation("Scraping Your Website Buddy ", temp_event)
-    website = Website(link,0,str(ll.hostname),False)
-    success = website.download()
 
+    logger.info(f"SCRAPING WEBSITE: {link}\n\n")
+
+
+
+    # Website creation & download !
+    if file_location.strip()!="":
+        website = Website(link, level, file_location)
+    else:
+        website = Website(link, level)
+    website.cors = False
+    
+    success = asyncio.run(website.download())
+
+    # Opening the embedded browser !
+    time.sleep(2)
+    print("\t\t\t=======================\n\t\t\t\tWEBBER\n\t\t\t=======================\n")
+    print("\t\t\t   SCRAPE: ",end="")
     if success:
-        temp_event.clear()
         print("SUCCESS !")
         webview.settings['ALLOW_DOWNLOADS'] = True
-        window = webview.create_window('MY WEBSITE',f"{str(ll.hostname)}/index.html")
+        window = webview.create_window('MY WEBSITE',website.index_file_location)
         webview.start()
     else:
-        temp_event.clear()
         print("FAILED !")
+
+
+main()
