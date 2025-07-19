@@ -7,4 +7,16 @@ Scrape websites till any depth you want ranging from just a single domain downlo
 
 It searches all links and downloads everything right into your computer so that you can access them later again.
 
+==
+SETUP
+```bash
+pip install -r requirements.txt
+```
+
+==
+RUN
+```bash
+python base.py
+```
+
 > ONLY FOR EDUCATIONAL PURPOSES
