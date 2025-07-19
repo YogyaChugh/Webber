@@ -533,7 +533,7 @@ class Website:
         self.outputs[file.url] = (path,prev_names)
         self.thread_count -=1
 
-def main():
+if __name__ == "__main__":
     if os.name == "nt":
         os.system("cls")
     else:
@@ -589,6 +589,3 @@ def main():
         webview.start()
     else:
         print("FAILED !")
-
-
-main()
