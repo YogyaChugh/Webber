@@ -6,3 +6,4 @@ chardet
 pywebview
 logging
 html5lib
+python-magic
