@@ -1,150 +1,138 @@
 from urllib.parse import urlparse
+import urllib.parse
 import urllib.request
 import exceptions
 import os
 import json
-from urlextract import URLExtract
 from bs4 import BeautifulSoup
 import cssbeautifier
 import jsbeautifier
 import chardet
 import webview
 import threading
-import logging
 import re
 import traceback
 import sys
-import time
 import asyncio
-import loading_animation
 import magic
-
-extractor = URLExtract()
+import requests
 
 
 class Webpage:
-    def __init__(self,url, website,download_res = True, download_cors_res = True):
+    """Represents a webpage with multiple attributes & methods
+    allowing the scrape of any webpage along with the urls & resources
+    embedded inside the html,css and js files for that webpage !
+
+    Raises:
+        exceptions.NoInternetConnection: No connection while downloading resources
+        exceptions.FileDownloadError: The requested URL doesn't return a valid response
+        exceptions.FileSaveError: Local FileSystem Error ! Unable to save file
+        e: Some other unknown python error
+
+    """
+    url = ""    #temp
+    download_res = True     #temp
+    download_cors_res = False   #temp
+    cors = False    #temp
+    cors_level = 0  #temp
+    file_location = ""
+    fileName = "index.html" #temp
+    website = None  #temp
+    parents = []
+    failed_downloads = []
+    loc = ""    #temp
+    main_files = set() # Contains .html, .css and .js files !
+    res_files = set() # Other files !
+    type = None #temp
+    maintain_logs = True #temp
+    logs = open("webber_unkown.log",'w')
+    def __init__(self,url, website, file_type, same_origin_deviation, cors_level, prev_link, content = None, download_res = True, download_cors_res = True):
         self.url = url
+        self.prev_link = prev_link
         self.download_res = download_res
         self.download_cors_res = download_cors_res
-        self.file_location = None
-        self.fileName = "index.html"
+        self.cors = website.settings.get('cors')
+        self.same_origin_deviation = same_origin_deviation
+        self.cors_level = cors_level
+        self.file_type = file_type
         self.website = website
-        
-
-        self.failed_downloads = []
+        self.content = content
 
         self.loc = website.location
-
-        # Sets
-        self.main_files = set() # Contains .html, .css and .js files !
-        self.res_files = set() # Other files !
-
-        self.type = None
-
-        # # Forming base url
-        # temp = eval(os.environ.get("file_types"))
-        # done = False
-        # for i in temp:
-        #     if self.url[len(self.url) - len(i):].lower() == i.lower():
-        #         self.base_url = "/".join((self.url.split("/")[:-1])) + "/"
-        #         done = True
-        #         self.type = i
-        #         break
         
-        # if not done:
-        #     self.base_url = self.url + ("/" if not self.url.endswith("/") else "")
-        #     self.type = ".HTML"
-
-        filetype = ".html"
-        aa = url.replace('\\','/')
-        for i in eval(os.environ.get('file_types')):
-            if i.lower() in (aa.split('/')[-1]).lower():
-                filetype = i.lower()
-                break
+        self.maintain_logs = self.website.settings.get('maintain_logs')
         
-        log_file_location = self.create_offline_location(url, filetype, True, 'logs')
-
-        main_name = log_file_location[1].replace(filetype,"")
-        os.makedirs(f"{log_file_location[0]}",exist_ok=True)
-        self.logs = open(f'{log_file_location[0]+main_name}.log','w')
-        self.logs.write(f"Webpage created for {url}")
+        if self.maintain_logs:
+            log_file_location = self.create_offline_location(url, file_type, True, 'logs')
+            main_name = log_file_location[1].replace(file_type,"")
+            os.makedirs(f"{log_file_location[0]}",exist_ok=True)
+            self.logs.close()
+            self.logs = open(f'{os.path.join(log_file_location[0], main_name)}.log','w')
+            self.logs.write(f"\nWebpage Created | {url} |")
 
     def __del__(self):
-        try:
+        if self.maintain_logs:
             self.logs.close()
-        except Exception:
-            pass
+        
+    def __eq__(self, another_webpage):
+        if (self.cors==another_webpage.cors and self.cors_level>=another_webpage.cors_level and (self.same_origin_deviation>=another_webpage.same_origin_deviation) and (self.download_res==another_webpage.download_res or self.download_res) and (self.download_cors_res==another_webpage.download_cors_res or self.download_cors_res)):
+            return True
+        return False
     
-    def download_resource(self,url,file_type = None):
-        urlpath = str(url.path)
-        file_type = file_type
-        if not file_type or file_type==".txt":
-            if ".css" == urlpath[-4:]:
-                file_type = ".css"
-            elif ".js" == urlpath[-3:]:
-                file_type = ".js"
-            elif ".html" == urlpath[-5:]:
-                file_type = ".html"
-            elif ".xml" == urlpath[-4:]:
-                file_type = ".xml"
-            else:
-                for i in eval(os.environ.get('file_types')):
-                    if i.lower() in urlpath.lower():
-                        file_type = i.lower()
-                        break
-            if file_type==None:
-                file_type = ".html"
+    def download_resource(self, url, file_type, content=None):
         try:
-            if file_type in ['.html','.css','.js','.xml','.txt']:
-                self.logs.write(f"\n\nURL REQUESTED: {url.geturl()}")
-            else:
-                self.logs.write(f"\n\nRESOURCE REQUESTED: {url.geturl()}")
-            gggg = (url.geturl()).replace(" ","%20")
-            content = urllib.request.urlopen(gggg).read()
-            self.logs.write("\nRECEIVED CONTENTS SUCCESSFULLY !\n\n")
-        except Exception:
+            url = url.replace("\\","/")
+            if not content:
+                print("Pirablem here h lala: ", url)
+                url_requested = urllib.parse.quote(url, safe=":/")
+                content = urllib.request.urlopen(url_requested).read()
+            if self.maintain_logs:
+                self.logs.write(f"\nRECEIVED CONTENTS SUCCESSFULLY | {url} |\n\n")
+        except Exception as e:
+            print("jaja")
             try:
                 content = urllib.request.urlopen("https://www.example.com").read()
             except Exception:
                 raise exceptions.NoInternetConnection()
-            self.logs.write("\nFile Couldn't be downloaded!")
-            raise exceptions.FileDownloadError(urlpath)
-    
-        if file_type == ".html":
+            raise exceptions.FileDownloadError(url)
+        if file_type == "text/html":
             content = content.decode("utf-8")
             content = BeautifulSoup(content, features="html5lib")
-        elif file_type == ".css":
+        elif file_type == "text/css":
             content = content.decode("utf-8")
             content = str(cssbeautifier.beautify(content))
-        elif file_type == ".js":
+        elif file_type == "text/javascript":
             content = content.decode("utf-8")
             content = str(jsbeautifier.beautify(content))
-        elif file_type == ".xml":
+        elif file_type == "text/xml" or file_type == "text/xhtml":
             content = content.decode('utf-8')
             content = BeautifulSoup(content, features="xml")
         return {'file_content': content, 'file_type': file_type}
     
     def create_offline_location(self, file_loc_url, file_type, main=False, inside_folder = ""):
         fileName = "index.html"
-        file_loc_url = file_loc_url.replace("\\","/")
-        temp_split = file_loc_url.split("/")
+        file_loc_url = urlparse(urllib.parse.quote(file_loc_url.geturl().replace("\\","/"), safe=":/"))
+        temp_split = (file_loc_url.geturl()).split("/")
 
-        temp = urlparse(self.url)
-
-        file_path = ""
-        if not( file_type==".html" and file_loc_url[-5:]!=".html"):
-            fileName = temp_split[-1]
-        
-        if fileName!="index.html":
-            file_path = "/".join(temp_split[:-1])
+        file_path = file_loc_url.path.replace("\\","/")
+        if file_type=="text/html" and file_loc_url.path[-5:]!=".html":
+            fileName = "index.html"
+        elif file_type == "text/xml" and file_loc_url.path[-4:]!=".xml":
+            fileName = "index.xml"
+        elif file_type=="text/xhtml" and file_loc_url[-6:]!=".xhtml":
+            fileName = "index.xhtml"
         else:
-            file_path = file_loc_url
+            fileName = file_loc_url.path.split("/")[-1]
+            file_path = "".join(file_path.split("/")[:-1])
+            
+        if (file_loc_url.path[-4:]!=".xml" and file_loc_url.path[-6:]!=".xhtml"):
+            if file_type == "text/xml":
+                fileName = "index.xml"
+            elif file_type == "text/xhtml":
+                fileName = "index.xhtml"
 
-        mid = "://" if str(temp.scheme) else ""
-        file_path = file_path.replace(str(temp.scheme) + mid + str(temp.hostname), "")
         while file_path.startswith("/"):
-            file_path = file_path[1:]
+            file_path = "".join(file_path.split("/")[1:])
         new_file_path = ""
         for i in range(len(file_path)):
             code = ord(file_path[i])
@@ -152,16 +140,15 @@ class Webpage:
                 new_file_path += chr((code % 65) + 65)
             else:
                 new_file_path += file_path[i]
-
         if inside_folder:
-            tempy = inside_folder + "/" + new_file_path + ("/" if new_file_path else "")
+            tempy = os.path.join(inside_folder, new_file_path)
         else:
-            tempy = new_file_path + ("/" if new_file_path else "")
+            tempy = new_file_path
 
-        if self.website.url.hostname==temp.hostname:
-            tempy = self.loc + ("/" if self.loc else "") + str(temp.hostname) + ("/" if temp.hostname else "") + tempy
+        if self.website.url.hostname==file_loc_url.hostname:
+            tempy = os.path.join(self.loc, str(file_loc_url.hostname), tempy)
         else:
-            tempy = self.loc + ("/" if self.loc else "") + str(self.website.url.hostname) + ("/" if str(self.website.url.hostname) else "") + str(temp.hostname) + ("/" if str(temp.hostname) else "") + tempy
+            tempy = os.path.join(self.loc, str(self.website.url.hostname), str(file_loc_url.hostname), tempy)
         if main:
             self.file_location = tempy
             self.fileName = fileName
@@ -171,52 +158,75 @@ class Webpage:
         try:
             os.makedirs(file_loc, exist_ok = True)
         except Exception:
-            raise exceptions.FileSaveError(file_loc + fileName)
+            print("directory banana is issue lala")
+            raise exceptions.FileSaveError(os.path.join(file_loc, fileName))
         
-        enc = None
         encoding = "utf-8"
-        skip_last = False
 
-        if file_type==".html" and fileName[-5:]!='.html':
-            enc = "w"
-        else:
-            if file_type in [".html",".css",".js",".xml"]:
-                enc = "w"
-            else:
-                encoding = None
-                enc = "wb"
-            skip_last = True
+        if file_type not in ["text/html", "text/css", "text/javascript", "text/xml", "text/xhtml", "text/plain"]:
+            encoding = None
         
         if encoding:
-            with open(file_loc + fileName, 'w', errors='replace',encoding=encoding) as file:
+            with open(os.path.join(file_loc, fileName), 'w', errors='replace',encoding=encoding) as file:
                 try:
                     file.write(file_content)
                 except Exception:
                     try:
                         file.write(str(file_content))
                     except Exception:
+                        print('writing issue')
                         result = chardet.detect(file_content)
                         encoding = result['encoding']
                         decoded_data = file_content.decode(encoding, errors="replace")
                         file.write(decoded_data)
         else:
-            with open(file_loc + fileName, 'wb') as file:
+            with open(os.path.join(file_loc, fileName), 'wb') as file:
                 try:
                     file.write(file_content)
                 except Exception:
                     try:
-                        file.write(str(file_content))
+                        file.write(str(file_content).encode('utf-8'))
                     except Exception:
+                        print('writing issue')
                         result = chardet.detect(file_content)
                         encoding = result['encoding']
                         decoded_data = file_content.decode(encoding, errors="replace")
                         file.write(decoded_data)
-        self.logs.write(f"\nFILE SAVED SUCCESSFULLY ! {file_loc + fileName}\n\n")
+        if self.maintain_logs:
+            self.logs.write(f"\nFILE SAVED SUCCESSFULLY | {os.path.join(file_loc, fileName)} |\n\n")
     
     def find_urls(self, content, is_html = False):
         urls = set()
         final_content = ""
-        self.logs.write("\n=========================\nFINDING INTERNAL URLS.....\n=========================")
+        #! ONLY THING WRITTEN BY AI (CHATGPT) #I_SUCK_AT_REGEX
+        pattern = re.compile(r'''
+            (?<![\w.])                                   # Don't match inside words like e.go or n.return
+
+            (
+                # Full URLs with scheme
+                (https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:/[^\s?#]*)?) |
+
+                # Domains without scheme (like www. or just domain)
+                ((?:www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:/[^\s?#]*)?) |
+
+                # Relative paths like ./file, ../file
+                (\.\.?/[^\s?#]+) |
+
+                # Rooted paths like /folder/file
+                (/[^\s?#]+) |
+
+                # File-like names (not e.value or t.length — ensure no single character before dot)
+                (?<![a-zA-Z0-9])                         # no letter/number before
+                ([a-zA-Z0-9_-]+\.(?:html|js|json|txt|exe|png|jpg|css|svg|ico|webp|gif|pdf))
+            )
+
+            (?![\w])                                     # no letter/number after match
+            ''', re.IGNORECASE | re.VERBOSE
+        )
+        #! TILL HERE ONLY !
+
+        if self.maintain_logs:
+            self.logs.write("\n=========================\nFINDING INTERNAL URLS.....\n=========================")
         if is_html:
             for i in content.find_all(True):
                 content_to_search = i
@@ -225,370 +235,323 @@ class Webpage:
                     content_to_search = "".join(str(attributes))
                 else:
                     content_to_search = str(i)
-
-                # This takes care of all absolute urls
-                urls = urls.union(extractor.find_urls(content_to_search))
-                # This takes care of relative urls
+                found_urls = re.findall(pattern, content_to_search)
+                for url in found_urls:
+                    print('url: ',url)
+                    if url.strip() in ["","/","."]:
+                        continue
+                    print(type(url))
+                    urls.add(url)
+                    yield url
                 final_content += content_to_search
         else:
             final_content = content
-            urls = urls.union(extractor.find_urls(final_content))
-        self.logs.write("\nAUTO FIND COMPLETE :)")
-        for i in urls.copy():
-            if i in self.website.urls_searched:
-                self.logs.write(f"\n\t\tSkipped URL: {i}")
-                urls.remove(i)
-            else:
-                self.logs.write(f"\n\t\t{i}")
-        self.website.urls_searched.union(urls)
-        main_link = urlparse(self.url)
-        prev_links = {}
-        link = ""
-        self.logs.write("\n\nMANUAL FIND START !")
+            found_urls = re.findall(pattern, final_content)
+            for url in found_urls:
+                print('url: ',url)
+                if url.strip() in ["","/","."]:
+                    continue
+                urls.add(url[1])
+                yield url[1]
 
-        #! ONLY THING WRITTEN BY CHATGPT ! I SUCK AT REGEX !
-        pattern = re.compile(r'''
-            (['"])                    # Group 1: opening quote
-            (                         # Group 2: full path inside quotes
-                (\\{1,2}|/{1,2})      # starts with 1 or 2 slashes or backslashes
-                (?=                   # lookahead: must have at least one alphanumeric after slashes
-                    [^'"\\\n]*[a-zA-Z0-9]
-                )
-                [^'"\\\n]{1,}         # at least one character (excluding quote/backslash/newline)
-            )
-            \1                        # closing quote matching opening
-        ''', re.VERBOSE)
-        #! YEP ! THAT's IT
-        for match in pattern.finditer(final_content):
-            full_string = match.group(0)
-            full_string = str(full_string)
-            if full_string.strip() not in ['/','\\','']:
-                if full_string[1:].startswith("//") or full_string[1:].startswith("\\"):
-                    temp = str(main_link.scheme) + ":" + full_string[1:-1]
-                else:
-                    temp = str(main_link.scheme) + "://" + str(main_link.hostname) + full_string[1:-1]
-                if temp not in self.website.urls_searched:
-                    self.website.urls_searched.add(temp)
-                    urls.add(temp)
-                    prev_links[temp] = full_string[1:-1]
-                    self.logs.write(f"\n\t\t{temp}")
-                else:
-                    self.logs.write(f"\n\t\tSkipped URL: {temp}")
-
-
-        # while temp_i<len(final_content):
-        #     if not waiting:
-        #         if final_content[temp_i]=="\"" or final_content[temp_i]=="'":
-        #             if final_content[temp_i + 1] in ["\\", "/"]:
-        #                 waiting = True
-        #                 temp_i+=1
-        #                 if final_content[temp_i + 1] in ["\\", "/"]:
-        #                     add_beginner_text = False
-        #                     temp_i +=1
-        #     else:
-        #         if final_content[temp_i]=="\"" or final_content[temp_i]=="'":
-        #             self.logs.write(f"     ADDED: {link}")
-        #             if link.strip() not in ['/','\\','']:
-        #                 if add_beginner_text:
-        #                     temporary = self.base_url + link
-        #                     try:
-        #                         a = urllib.request.urlopen(temporary).read()
-        #                     except Exception:
-        #                         gg = urlparse(self.url)
-        #                         temporary = str(gg.scheme) + "://" + str(gg.hostname) + "/" + link
-        #                     prev_links["/" + link] = temporary
-        #                     if temporary not in self.website.urls_searched:
-        #                         self.website.urls_searched.add(temporary)
-        #                         urls.add(temporary)
-        #                 else:
-        #                     if (str(main_link.scheme) + "://" + link) not in self.website.urls_searched:
-        #                         self.website.urls_searched.add(str(main_link.scheme) + "://" + link)
-        #                         urls.add(str(main_link.scheme) + "://" + link)
-        #                     prev_links["//" + link] = str(main_link.scheme) + "://" + link
-        #             waiting = False
-        #             link = ""
-        #             add_beginner_text = True
-        #         else:
-        #             link += final_content[temp_i]
-        #     temp_i += 1
-        if link.strip()!="":
-            urls.add(link)
         self.logs.write("\n=====================\nURL FIND COMPLETE !!!!\n=====================\n")
-        return (urls,prev_links)
+        
+    def add_parent(self, parent):
+        if self.file_location!="":
+            with open(os.path.join(parent.file_location, parent.fileName), 'r', encoding='utf-8') as file:
+                a = file.read()
+            tempi_lala = os.path.join(self.file_location, self.fileName)
+            a = a.replace(self.prev_link, os.path.relpath(tempi_lala, parent.file_location))
+            with open(os.path.join(parent.file_location, parent.fileName), 'w') as file:
+                file.write(a)
+            return True
+        else:
+            return False
 
-    def download(self, thread_num):
-        link = urlparse(self.url)
+    def download(self):
         urls = []
 
         try:
-            content = self.download_resource(link)
+            content = self.download_resource(self.url.geturl(), self.file_type, self.content)
         except Exception as e:
             raise e
         
         self.type = content.get('file_type')
-        urls = self.find_urls(content.get('file_content'),content.get('file_type')==".html")
-
         file_content = content.get('file_content')
-        if self.type==".html":
+        self.content = file_content
+        if self.type=="text/html":
             file_content = file_content.prettify()
-
-        file_types = eval(os.environ.get('file_types'))
-        if not file_types:
-            raise exceptions.FileDownloadError(self.url)
-        
         ppp = self.create_offline_location(self.url, content.get('file_type'),True)
         
-        just_chilling = urls[1]
-        for i in urls[0]:
-            found = True
-            found_type = None
-            temp_link = urlparse(i)
-            try:
-                atempi = urllib.request.urlopen(i.replace(" ","%20")).read()
-                with open("file_types.json","r") as f:
-                    mimes = json.load(f)['mime_types']
-                type_file = magic.from_buffer(atempi, mime=True)
-                if type_file in ['text/html','text/css','text/js','text/plain']:
-                    found = False
-                    if not self.website.cors and str(temp_link.hostname)!=str(self.website.url.hostname):
-                        break
-                found_type = mimes[type_file].lower()
-            except:
-                for file_type in file_types:
-                    if file_type not in [".HTML",".CSS",".JS"]:
-                        bobby = i[(len(i) - len(file_type)):].lower()
-                        if file_type.lower() == bobby:
-                            found_type = file_type.lower()
-                    else:
-                        found = False
-            if found:
-                self.res_files.add(i)
-                if self.download_res and (temp_link.hostname == link.hostname or self.download_cors_res):
-                    try:
-                        temp_content = self.download_resource(temp_link, found_type)
-                    except Exception as e:
-                        self.failed_downloads.append(i)
-                        continue
-                    path = self.create_offline_location(i,temp_content.get('file_type'))
-                    go_on = True
-                    if (os.path.exists(path[0] + path[1]) and not eval(os.environ.get("REFETCH"))):
-                        go_on = False
-                    else:
-                        go_on = True
-                    
-                    relpath = path[0] + path[1]
-                    # rint("Relpath: ",relpath)
-                    # rint("Main file loc: ",ppp[0])
-                    relpath = os.path.relpath(relpath, ppp[0])
-                    # print("Found path: ",relpath)
-                    relpath = (rf"{relpath}").replace("\\","/")
-                    if go_on:
-                        self.save_file(path[0],path[1],temp_content.get('file_content'),temp_content.get('file_type'))
-                    if just_chilling.get(i):
-                        file_content = file_content.replace(just_chilling.get(i), relpath) # type: ignore
-                        del just_chilling[i]
-                    else:
-                        file_content = file_content.replace(i, relpath) # type: ignore
-
-            else:
-                self.main_files.add(i)
-                if i not in just_chilling:
-                    just_chilling[i] = None
 
         go_on = True
-        if (os.path.exists(ppp[0] + ppp[1])):
-            if ".html" in ppp[1] or ".css" in ppp[1] or ".js" in ppp[1]:
-                with open(ppp[0] + ppp[1],'r') as fs:
-                    try:
-                        maggi = fs.read()
-                        if maggi.strip() not in ['None','',' ']:
-                            go_on = False
-                    except Exception:
-                        go_on = True
-            else:
-                go_on = False
-        if go_on:
-            self.save_file(ppp[0], ppp[1], file_content, content.get('file_type'))
+        if not self.website.settings.get('refetch') and (os.path.exists(ppp[0] + ppp[1])):
+            pass
         else:
-            with open(ppp[0] + ppp[1],'w', encoding='utf-8') as fs:
-                a = file_content.encode('utf-8', errors="replace")
-                a = a.decode('utf-8')
-                fs.write(a)
-        return [ppp[0] + ppp[1], self.main_files, just_chilling, self.res_files]
+            self.save_file(ppp[0], ppp[1], file_content, content.get('file_type'))
+        for i in self.parents:
+            self.add_parent(i)
+        return True
 
 
 class Website:
+    """
+        Class representing a website as in URL !
+    """
+    url = None
     location = ""
-    def __init__(self, url, scrape_level, location = "", cors = True):
-        self.url = urlparse(url)
-        self.base_file = Webpage(url, self)
-        self.location = location
-        self.index_file_location = None
-        self.cors = cors
-        self.scrape_level = scrape_level
+    cors = False
+    scrape_level = 0
+    max_cors = 0
+    index_file_location = ""
+    refetch = False
+    settings = {}
+    logger = open("webber_unkown.log",'w')
+    failed = False         # Whether fetching URLS failed
+    thread_count = 0       # Num of threads
+    threads = []           # List of tuples of (a thread, url associated with that thread)
+    outputs = {}           # Dictionary mapping each file to it's local_name & all links inside that file with their changed names
+    resources_downloaded = {} # Dictionary of resources already downloaded in format {resource_url: (new_url, in_progress #bool, success #bool, file_type)}
+    webpages_scraped = {} # Webpages scrapes {url of webpage: (webpage object, in_progress #bool, success #bool)}
 
-        self.failed = False
+    def __init__(self,settings):
 
-        self.urls_searched = set()
+        # Frequently used ones stored !
+        self.url = urlparse(urllib.parse.quote(settings.get('url').replace("\\","/"), safe=":/"))
+        self.base_file = Webpage(self.url, self, "text/html", settings.get('same_origin_deviation'), settings.get('max_cors'), self.url, None, settings.get('download_res'), settings.get('download_cors_res'))
+        self.location = settings.get('location')
+        self.cors = settings.get('cors')
+        self.scrape_level = settings.get('same_origin_deviation') # Max grandchildren for same origin urls
+        self.max_cors = settings.get("max_cors") # Max CORS
+        self.refetch = settings.get("refetch") # Whether to avoid using cached urls or not !
 
-        self.thread_count = 0
+        self.index_file_location = os.path.join(self.location, str(self.url.hostname))
 
-        self.threads = []
-        self.outputs = {}
+        self.settings = settings
 
-        self.urls_inner_scraped = {url}
+        # Extra information storage
+        os.makedirs(os.path.join(self.location, str(self.url.hostname)), exist_ok=True)
+        self.special = open("urls_scraped.log",'w')
+        
+        if settings.get('maintain_logs') and self.location:
+            self.logger.close()
+            self.logger = open(os.path.join(self.location, str(self.url.hostname), "webber.log"),'w')
+            self.logger.write(f"Scrape Started!\n\t\tWEBSITE | {self.url.geturl()} |")
 
-        self.urls_hostname_list = {self.url.hostname}
+    def __del__(self):
+        self.special.close()
+        if self.settings.get('maintain_logs'):
+            self.logger.write(f"Logger for {self.url.geturl()} closed !")
+            self.logger.close()
+            
+    def correct_url(self, url, webpage = None):
+        if not url.startswith("/") or not webpage:
+            return url
+        if webpage.url.hostname:
+            return os.path.join(str(webpage.url.scheme)+ "://", str(webpage.url.hostname), url[1:])
+        else:
+            return os.path.join(str(self.url.scheme)+ "://", str(self.url.hostname), url[1:])
 
     async def download(self):
+        """Downloads a complete website based on the settings passed while construction.
+
+        Returns:
+            bool: Success or Failure
+        """
+        # RESET
         self.threads = []
         self.outputs = {}
-        self.urls_searched = set()
-        self.urls_inner_scraped = {self.url.geturl()}
+        self.webpages_scraped = {}
+        self.resources_downloaded = {}
         self.failed = False
-        self.index_file_location = None
-        # Event set for loading animation
-        temp_event = threading.Event()
-        temp_event.set()
-        threading.Thread(target=loading_animation.load_animation, args=(["CLIMBING MT.EVEREST TO FETCH YOUR WEBSITE ","FIGHTING THE DEVILS TO PREVENT COPYRIGHT  ","GOING TO MARS FOR FASTER INTERNET SPEEEED ","ASKING YOUR CRUSH FOR APPROVAL # FETCHING "], temp_event)).start()
-        b = threading.Thread(target=self.download_webpage, args=(self.base_file, self.scrape_level))
-        b.start()
-        self.threads.append([b,self.url.geturl()])
-        self.urls_hostname_list = {self.url.hostname}
-        for i in self.threads:
-            i[0].join()
-        dada = 0
-        for i in self.threads:
-            if dada==0:
-                try:
-                    self.index_file_location = self.outputs[i[1]][0]
-                except:
-                    pass
-                dada+=1
-            if self.outputs.get(i[1]):
-                gg_temp = self.outputs[i[1]]
-                with open(gg_temp[0],"r", encoding="utf-8") as fi:
-                    a = fi.read()
-                with open(gg_temp[0],"w", encoding="utf-8") as fi:
-                    temp = gg_temp[1]
-                    for j in temp:
-                        if self.outputs.get(j):
-                            relpath = os.path.relpath(self.outputs[j][0],gg_temp[0])
-                            relpath = (rf"{relpath}").replace("\\","/")
-                            if temp[j]:
-                                a = a.replace(temp[j], relpath)
-                            else:
-                                a = a.replace(j, relpath)
-                    fi.write(a)
-            else:
-                globals()['logger'].critical(f"FAILED REPLACING URLS FOR {i[0]} !\nOUTPUTS: {self.outputs}")
 
-        temp_event.clear()
+        # Event set for loading animation
+        # temp_event = threading.Event()
+        # temp_event.set()
+        # threading.Thread(target=loading_animation.load_animation, args=(["CLIMBING MT.EVEREST TO FETCH YOUR WEBSITE ","FIGHTING THE DEVILS TO PREVENT COPYRIGHT  ","GOING TO MARS FOR FASTER INTERNET SPEEEED ","ASKING YOUR CRUSH FOR APPROVAL # FETCHING "], temp_event)).start()
+        print(f"Thread started for {self.url.geturl()}")
+        self.download_webpage(self.base_file)
+        for i in self.threads:
+            i[1].join()
+        
+        if self.webpages_scraped.get(self.url.geturl()):
+            self.failed = not self.webpages_scraped.get(self.url.geturl())[2]
+        else:
+            self.failed = True
+
+        # temp_event.clear()
         if not self.failed:
-            globals()['logger'].info(f"\n\t\t\t\t================================\n\t\t\t\tSUCCESS SCRAPING WEBSITE {self.url.geturl()}\n\t\t\t\t================================\n")
+            if self.settings.get('maintain_logs'):
+                self.logger.write(f"\n\t\t\t\t================================\n\t\t\t\tSUCCESS SCRAPING WEBSITE {self.url.geturl()}\n\t\t\t\t================================\n")
             return True
         else:
-            globals()['logger'].critical(f"\n\t\t\t\t================================\n\t\t\t\tFAILED SCRAPING WEBSITE FOR {self.url.geturl()}\n\t\t\t\t================================\n")
+            if self.settings.get('maintain_logs'):
+                self.logger.write(f"\n\t\t\t\t================================\n\t\t\t\tFAILED SCRAPING WEBSITE FOR {self.url.geturl()}\n\t\t\t\t================================\n")
             return False
     
-    def download_webpage(self,file,level):
+    def download_webpage(self,web_page):
         try:
-            if not file:
-                return None
-            path, main_files, prev_names, res_files = file.download(len(self.threads)-1)
-            if file.failed_downloads:
-                globals()['logger'].critical(f"\n================================\nDOWNLOADS FAILED FOR {file.url} ARE:\n")
-                for a in file.failed_downloads:
-                    globals()['logger'].critical(f"\n\t\t{a}")
-            for i in main_files:
-                if i in self.urls_inner_scraped:
-                    continue
-                self.urls_inner_scraped.add(i)
-                temp = urlparse(i)
-                if (temp.hostname == self.url.hostname and (level+1)>0):
-                    web_page = Webpage(i, self)
-                    t = threading.Thread(target=self.download_webpage, args=(web_page, level))
+            success = web_page.download()
+            if success:
+                print('success')
+                self.webpages_scraped[web_page.prev_link] = (web_page, False, True)
+                urls = web_page.find_urls(web_page.content, True if web_page.file_type in ["text/html", "text/xml", "text/xhtml"] else False)
+                temp_threads = []
+                for url in urls:
+                    print(f'Thread started for {url}')
+                    t = threading.Thread(target=self.check_and_call, args=(web_page, url))
+                    temp_threads.append(t)
                     t.start()
-                    self.thread_count +=1
-                    globals()['logger'].info(f"\nThread Started: {len(self.threads)}")
-                    self.threads.append([t, i])
-                elif level>0 and self.cors:
-                    web_page = Webpage(i, self)
-                    t = threading.Thread(target=self.download_webpage, args=(web_page, level-1))
-                    t.start()
-                    self.thread_count +=1
-                    globals()['logger'].info(f"\nThread Started: {len(self.threads)}")
-                    self.threads.append([t, i])
-                else:
-                    globals()['logger'].warning(f"\nURL SKIPPED TO PREVENT RECURSION: {i}")
+                    self.special.write(f"Thread started for {url}")
+                for t in temp_threads:
+                    t.join()
+            else:
+                print('fail')
+                self.webpages_scraped[web_page.prev_link] = (web_page, False, False)
 
         except Exception as e:
-            exc_type, exc_value, exc_tb = sys.exc_info()
-            tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
-            exception_string = ''.join(tb.format())
-            globals()['logger'].critical(exception_string)
-            self.thread_count -=1
-            return
+            self.webpages_scraped[web_page.prev_link] = (web_page, False, False)
+            if self.settings.get('maintain_logs'):
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                if exc_type and exc_value:
+                    tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
+                    exception_string = ''.join(tb.format())
+                else:
+                    exception_string = f"Error: {e.args[0]} \nExtra: Couldn't traceback"
+                self.logger.write(f"\n\nDownload Failed | {web_page.url.geturl()} |\n\n")
+                self.logger.write(f"Error: {exception_string}")
+                
+    def check_and_call(self, web_page, url):
+        try:
+            to_be_done = True
+            if url in self.resources_downloaded:
+                temp = self.resources_downloaded.get(url)
+                if temp and temp[2]:
+                    print(f"Skipped | {url} |")
+                    to_be_done = False
+                    file_path = os.path.join(web_page.file_location, web_page.fileName)
+                    with open(file_path,'r') as file:
+                        file_contents = file.read()
+                    file_contents.replace(url, temp[0])
+                    with open(file_path, 'w') as file:
+                        file.write(file_contents)
 
-        self.outputs[file.url] = (path,prev_names)
-        self.thread_count -=1
+            if to_be_done:
+                new_url = self.correct_url(url, web_page)
+                new_url = new_url.replace("\\","/")
+                url_requested = urllib.parse.quote(new_url, safe=":/")
+                try:
+                    content = urllib.request.urlopen(url_requested).read()
+                except Exception:
+                    try:
+                        content = urllib.request.urlopen("https://www.example.com").read()
+                    except Exception:
+                        raise exceptions.NoInternetConnection()
+                    raise exceptions.FileDownloadError(url)
+                with open("file_types.json","r") as f:
+                    mimes = json.load(f)['mime_types']
+                type_file = magic.from_buffer(content, mime=True)
+                if type_file == 'text/plain':
+                    types_man = os.environ.get('file_types', '[]')
+                    if types_man:
+                        file_types=eval(types_man)
+                        for file_type in file_types:
+                            bobby = new_url[(len(new_url) - len(file_type)):].lower()
+                            if file_type.lower() == bobby:
+                                type_file = file_types[file_type].lower()
+                temporary_made_url = urlparse(new_url)
+                if type_file in ['text/html','text/css','text/javascript','text/plain']:
+                    if web_page.url.hostname == temporary_made_url.hostname and web_page.same_origin_deviation>0:
+                        temp = Webpage(temporary_made_url, self, type_file, web_page.same_origin_deviation-1, web_page.cors_level, url, content, self.settings.get('cors_download_res'), self.settings.get('cors_download_cors_res'))
+                    elif web_page.cors and web_page.cors_level>0:
+                        temp = Webpage(temporary_made_url, self, type_file, 0, web_page.cors_level - 1, url, content, self.settings.get('cors_download_res'), self.settings.get('cors_download_cors_res'))
+                    else:
+                        return
+                    temp2 = self.webpages_scraped.get(url)
+                    if temp2 and temp==temp2[0]:
+                        if temp2[1]:
+                            print(f"Skipped | {url} |")
+                            atry = temp2[0].add_parent(web_page)
+                            if not atry:
+                                temp2[0].parents.append(web_page)
+                            return
+                        elif temp2[2]:
+                            print(f"Skipped | {url} |")
+                            temp2[0].add_parent(web_page)
+                            return
+                    self.webpages_scraped[url] = (temp, True, False)
+                    temp.parents.append(web_page)
+                    t = threading.Thread(target=self.download_webpage, args=(temp,))
+                    self.threads.append((url, t))
+                    t.start()
+                    print(f"Success started for {url}")
+                    if self.settings.get('maintain_logs'):
+                        self.logger.write(f"\n\nDownloading Webpage | {new_url} |")
+                else:
+                    if ((web_page.url.hostname == temporary_made_url.hostname or self.url.hostname == temporary_made_url.hostname) and web_page.download_res) or (web_page.url.hostname!=temporary_made_url.hostname and self.url.hostname!=temporary_made_url.hostname and web_page.download_cors_res):
+                        if self.settings.get('maintain_logs'):
+                            self.logger.write(f"\n\nDownloading Resource | {new_url} |")
+                        self.resources_downloaded[url] = (new_url, True, False, type_file)
+                        temp_location = os.path.join(web_page.file_location, web_page.fileName)
+                        a_temp = web_page.download_resource(new_url, type_file, content)
+                        print('came here')
+                        location, file_name = web_page.create_offline_location(temporary_made_url, type_file)
+                        try:
+                            web_page.save_file(location, file_name, a_temp.get('file_content'), a_temp.get('file_type'))
+                            self.resources_downloaded[url] = (new_url, False, True, type_file)
+                        except:
+                            self.resources_downloaded[url] = (new_url, False, False, type_file)
+                        with open(temp_location, 'r', encoding='utf-8') as file:
+                            a = file.read()
+                        tempi_boi = os.path.join(location, file_name)
+                        a = a.replace(url, os.path.relpath(tempi_boi, web_page.file_location))
+                        with open(temp_location, "w", encoding='utf-8') as file:
+                            file.write(a)
+                        if self.settings.get('maintain_logs'):
+                            self.logger.write(f"\n\nDownload Complete | {new_url} |")
+                        print(f"Success complete for {url}")
+        except Exception as e:
+            # print(e)
+            #self.webpages_scraped[url] = (, False, False)
+            if self.settings.get('maintain_logs'):
+                exc_type, exc_value, exc_tb = sys.exc_info()
+                if exc_type and exc_value:
+                    tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
+                    exception_string = ''.join(tb.format())
+                else:
+                    exception_string = f"Error: {e.args[0]} \nExtra: Couldn't traceback"
+                print(f"Failed | {url} |")
+                self.logger.write(f"\n\nDownload Failed | {url} |\n\n")
+                self.logger.write(f"\nError: {exception_string}")
+                # print(exception_string)
+                    
 
-def main():
-    if os.name == "nt":
-        os.system("cls")
-    else:
-        os.system("clear")
+def main(website_name):
 
-    # OS VARIABLES
-    with open('file_types.json') as f:
-        file = json.load(f)
-    os.environ['file_types'] = str(file['file_types_list'])
-    os.environ['REFETCH'] = str('False')
-
-
-    # INPUT
-    print("\t\t\t=======================\n\t\t\t\tWEBBER\n\t\t\t=======================")
-    link = input("Enter URL: ")
-    file_location = input("Enter file location( Press 'Enter' for current directory ): ")
-    level = int(input("Enter scrape level: "))
-    print("=======================================================")
-
-    # Make dirs
-    ll = urlparse(link)
-
-    # Logging
-    if file_location.strip()!="":
-        os.makedirs(file_location)
-        logging.basicConfig(filename=f"{file_location}/{ll.hostname}.log",level=logging.DEBUG)
-    else:
-        logging.basicConfig(filename=f"{ll.hostname}.log",level=logging.DEBUG)
-    logger = logging.getLogger(__name__)
-    globals()["logger"] = logger
-
-    logger.info(f"SCRAPING WEBSITE: {link}\n\n")
-
-
+    # Open settings file
+    try:
+        with open("settings.json") as file:
+            url = json.load(file)
+        settings = url.get(website_name)
+    except:
+        return None
+    #! SET file_types of mime as os env
+    with open("file_types.json",'r') as file_tp:
+        a = json.load(file_tp)
+    os.environ['file_types'] = str(a['file_types_to_mime'])
 
     # Website creation & download !
-    if file_location.strip()!="":
-        website = Website(link, level, file_location)
-    else:
-        website = Website(link, level)
-    website.cors = False
-    
+    website = Website(settings)
     success = asyncio.run(website.download())
 
-    # Opening the embedded browser !
-    time.sleep(2)
-    print("\t\t\t=======================\n\t\t\t\tWEBBER\n\t\t\t=======================\n")
-    print("\t\t\t   SCRAPE: ",end="")
     if success:
-        print("SUCCESS !")
-        webview.settings['ALLOW_DOWNLOADS'] = True
-        window = webview.create_window('MY WEBSITE',website.index_file_location)
-        webview.start()
+        return os.path.join(website.index_file_location, "index.html")
     else:
-        print("FAILED !")
+        return None
 
-
-main()
+a = main("Website 1")
+if a:
+    webview.settings['ALLOW_DOWNLOADS'] = True
+    webview.settings['OPEN_EXTERNAL_LINKS_IN_BROWSER'] = False
+    window = webview.create_window('MY WEBSITE',a)
+    webview.start()

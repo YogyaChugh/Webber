@@ -1,0 +1,15 @@
+INFO:__main__:SCRAPING WEBSITE: https://www.example.com
+
+
+DEBUG:asyncio:Using proactor: IocpProactor
+DEBUG:filelock:Attempting to acquire lock 1596239428112 on C:\Users\Lenovo\OneDrive\Desktop\Webber\new\Lib\site-packages\tldextract\.suffix_cache\publicsuffix.org-tlds\de84b5ca2167d4c83e38fb162f2e8738.tldextract.json.lock
+DEBUG:filelock:Lock 1596239428112 acquired on C:\Users\Lenovo\OneDrive\Desktop\Webber\new\Lib\site-packages\tldextract\.suffix_cache\publicsuffix.org-tlds\de84b5ca2167d4c83e38fb162f2e8738.tldextract.json.lock
+DEBUG:filelock:Attempting to release lock 1596239428112 on C:\Users\Lenovo\OneDrive\Desktop\Webber\new\Lib\site-packages\tldextract\.suffix_cache\publicsuffix.org-tlds\de84b5ca2167d4c83e38fb162f2e8738.tldextract.json.lock
+DEBUG:filelock:Lock 1596239428112 released on C:\Users\Lenovo\OneDrive\Desktop\Webber\new\Lib\site-packages\tldextract\.suffix_cache\publicsuffix.org-tlds\de84b5ca2167d4c83e38fb162f2e8738.tldextract.json.lock
+WARNING:__main__:
+URL SKIPPED TO PREVENT RECURSION: https://www.iana.org/domains/example']
+INFO:__main__:
+				================================
+				SUCCESS SCRAPING WEBSITE https://www.example.com
+				================================
+
