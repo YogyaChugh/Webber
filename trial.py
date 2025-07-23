@@ -1,19 +1,23 @@
-import traceback
-import sys
+# Taken from husano896's PR thread (slightly modified)
+import pygame
+from pygame.locals import *
+pygame.init()
+screen = pygame.display.set_mode((640, 480))
+clock = pygame.time.Clock()
 
 def main():
-    a = "Hello brother"
-    try:
-      b = a.maggi
-    except Exception as e:
-      exc_type, exc_value, exc_tb = sys.exc_info()
-      exc_type = None
-      if exc_type and exc_value:
-          tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
-          print("new")
-          exception_string = ''.join(tb.format())
-      else:
-          exception_string = f"Error: {e.args[0]} \nExtra: Couldn't traceback"
-      print(exception_string)
+   while True:
+      for event in pygame.event.get():
+            if event.type == QUIT:
+               pygame.quit()
+               return
+            elif event.type == MOUSEWHEEL:
+               print(event)
+               print(event.x, event.y)
+               print(event.flipped)
+               # can access properties with
+               # proper notation(ex: event.y)
+      clock.tick(60)
 
+# Execute game:
 main()

@@ -16,7 +16,30 @@ import sys
 import asyncio
 import magic
 import requests
+import time
 
+
+import urllib.request
+import http.client
+
+import requests
+
+def download_resource_safe(url, max=2):
+    try:
+        with urllib.request.urlopen(url) as response:
+            try:
+                # Try reading all content
+                return response.read()
+            except http.client.IncompleteRead as e:
+                # print(f"[WARN] IncompleteRead at {url}, accepting partial data")
+                return e.partial  #  Accept partial chunked data
+            except urllib.request.HTTPError:
+                if max>=0:
+                    time.sleep(5)
+                    return download_resource_safe(url, max-1)
+    except Exception as e:
+        # print(f"[ERROR] Failed to download {url}: {e}")
+        raise exceptions.FileDownloadError(url)
 
 class Webpage:
     """Represents a webpage with multiple attributes & methods
@@ -83,21 +106,19 @@ class Webpage:
         try:
             url = url.replace("\\","/")
             if not content:
-                print("Pirablem here h lala: ", url)
                 url_requested = urllib.parse.quote(url, safe=":/")
-                content = urllib.request.urlopen(url_requested).read()
+                content = download_resource_safe(url_requested)
             if self.maintain_logs:
                 self.logs.write(f"\nRECEIVED CONTENTS SUCCESSFULLY | {url} |\n\n")
         except Exception as e:
-            print("jaja")
             try:
-                content = urllib.request.urlopen("https://www.example.com").read()
+                content = download_resource_safe("https://www.example.com")
             except Exception:
                 raise exceptions.NoInternetConnection()
             raise exceptions.FileDownloadError(url)
         if file_type == "text/html":
             content = content.decode("utf-8")
-            content = BeautifulSoup(content, features="html5lib")
+            content = BeautifulSoup(content, features="html5lib").prettify()
         elif file_type == "text/css":
             content = content.decode("utf-8")
             content = str(cssbeautifier.beautify(content))
@@ -106,7 +127,7 @@ class Webpage:
             content = str(jsbeautifier.beautify(content))
         elif file_type == "text/xml" or file_type == "text/xhtml":
             content = content.decode('utf-8')
-            content = BeautifulSoup(content, features="xml")
+            content = BeautifulSoup(content, features="xml").prettify()
         return {'file_content': content, 'file_type': file_type}
     
     def create_offline_location(self, file_loc_url, file_type, main=False, inside_folder = ""):
@@ -114,6 +135,7 @@ class Webpage:
         file_loc_url = urlparse(urllib.parse.quote(file_loc_url.geturl().replace("\\","/"), safe=":/"))
         temp_split = (file_loc_url.geturl()).split("/")
 
+        # print(file_loc_url)
         file_path = file_loc_url.path.replace("\\","/")
         if file_type=="text/html" and file_loc_url.path[-5:]!=".html":
             fileName = "index.html"
@@ -123,7 +145,7 @@ class Webpage:
             fileName = "index.xhtml"
         else:
             fileName = file_loc_url.path.split("/")[-1]
-            file_path = "".join(file_path.split("/")[:-1])
+            file_path = "/".join(file_path.split("/")[:-1])
             
         if (file_loc_url.path[-4:]!=".xml" and file_loc_url.path[-6:]!=".xhtml"):
             if file_type == "text/xml":
@@ -131,12 +153,12 @@ class Webpage:
             elif file_type == "text/xhtml":
                 fileName = "index.xhtml"
 
-        while file_path.startswith("/"):
-            file_path = "".join(file_path.split("/")[1:])
+        while file_path.startswith("/") or file_path.startswith("\\"):
+            file_path = "/".join(file_path.split("/")[1:])
         new_file_path = ""
         for i in range(len(file_path)):
             code = ord(file_path[i])
-            if (code<47 or code>57) and (code<65 or code>172) and code not in [33,35,36,37,38,39,40,41,43,44,45,46,47,59,61,64,123,125,126]:
+            if (code<47 or code>57) and (code<65 or code>172) and code not in [33,35,36,38,39,40,41,43,44,45,46,47,59,61,64,123,125,126]:
                 new_file_path += chr((code % 65) + 65)
             else:
                 new_file_path += file_path[i]
@@ -152,16 +174,18 @@ class Webpage:
         if main:
             self.file_location = tempy
             self.fileName = fileName
-        return (tempy,fileName)
+        # print(tempy)
+        return (tempy.replace("\\","/"),fileName)
     
-    def save_file(self, file_loc, fileName, file_content, file_type):        
+    def save_file(self, file_loc, fileName, file_content, file_type):
+        # print(f"saving {os.path.join(file_loc, fileName)}")     
         try:
+            # print(file_loc)
             os.makedirs(file_loc, exist_ok = True)
         except Exception:
-            print("directory banana is issue lala")
             raise exceptions.FileSaveError(os.path.join(file_loc, fileName))
         
-        encoding = "utf-8"
+        encoding = 'utf-8'
 
         if file_type not in ["text/html", "text/css", "text/javascript", "text/xml", "text/xhtml", "text/plain"]:
             encoding = None
@@ -174,7 +198,6 @@ class Webpage:
                     try:
                         file.write(str(file_content))
                     except Exception:
-                        print('writing issue')
                         result = chardet.detect(file_content)
                         encoding = result['encoding']
                         decoded_data = file_content.decode(encoding, errors="replace")
@@ -187,7 +210,6 @@ class Webpage:
                     try:
                         file.write(str(file_content).encode('utf-8'))
                     except Exception:
-                        print('writing issue')
                         result = chardet.detect(file_content)
                         encoding = result['encoding']
                         decoded_data = file_content.decode(encoding, errors="replace")
@@ -199,71 +221,68 @@ class Webpage:
         urls = set()
         final_content = ""
         #! ONLY THING WRITTEN BY AI (CHATGPT) #I_SUCK_AT_REGEX
-        pattern = re.compile(r'''
-            (?<![\w.])                                   # Don't match inside words like e.go or n.return
-
-            (
-                # Full URLs with scheme
-                (https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:/[^\s?#]*)?) |
-
-                # Domains without scheme (like www. or just domain)
-                ((?:www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:/[^\s?#]*)?) |
-
-                # Relative paths like ./file, ../file
-                (\.\.?/[^\s?#]+) |
-
-                # Rooted paths like /folder/file
-                (/[^\s?#]+) |
-
-                # File-like names (not e.value or t.length — ensure no single character before dot)
-                (?<![a-zA-Z0-9])                         # no letter/number before
-                ([a-zA-Z0-9_-]+\.(?:html|js|json|txt|exe|png|jpg|css|svg|ico|webp|gif|pdf))
+        pattern = r'''
+        ["']                                   # Opening quote
+        (
+            (?:                                # Case 1: Starts with path/prefix
+                (?:https?:\/\/|www\.|\/{1,2}|\\{1,2}|\.{1,2}[\\/])
+                [^"'\\\r\n]+
             )
-
-            (?![\w])                                     # no letter/number after match
-            ''', re.IGNORECASE | re.VERBOSE
+            |
+            (?:                                # Case 2: Ends with known extension
+                [^"'\\\r\n]*?
+                \.
+                (?:DOCX?|EML|MSG|ODT|PAGES|RTF|TEX|TXT|WPD|AAE|CSV|DAT|KEY|LOG|MPP|OBB|
+                PPTX?|RPT|TAR|VCF|XML|AIF|FLAC|M3U|M4A|MID|MP3|OGG|WAV|WMA|3GP|ASF|
+                AVI|FLV|M4V|MOV|MP4|MPG|SRT|SWF|TS|VOB|WMV|3DM|3DS|BLEND|DAE|FBX|
+                MAX|OBJ|BMP|DCM|DDS|DJVU|GIF|HEIC|JPG|PNG|PSD|TGA|TIF|AI|CDR|EMF|
+                EPS|PS|SKETCH|SVG|VSDX|INDD|OXPS|PDF|PMD|PUB|QXP|XPS|NUMBERS|ODS|
+                XLR|XLSX?|ACCDB|CRYPT14|DB|MDB|ODB|PDB|SQL|SQLITE|APK|BAT|BIN|CMD|
+                EXE|IPA|JAR|RUN|SH|DEM|GAM|GBA|NES|PAK|PKG|ROM|SAV|DGN|DWG|DXF|
+                STEP|STL|STP|GPX|KML|KMZ|OSM|ASPX?|CER|CFM|CSR|CSS|HTML|JS|JSON|
+                JSP|PHP|XHTML|CRX|ECF|PLUGIN|SAFARIEXTZ|XPI|FNT|OTF|TTF|WOFF2?|
+                ANI|CAB|CPL|CUR|DESKTHEMEPACK|DLL|DMP|DRV|ICNS|ICO)
+            )
         )
+        ["']                                   # Closing quote
+        '''
+
         #! TILL HERE ONLY !
 
         if self.maintain_logs:
             self.logs.write("\n=========================\nFINDING INTERNAL URLS.....\n=========================")
-        if is_html:
-            for i in content.find_all(True):
-                content_to_search = i
-                if i.name not in ["script","style"]:
-                    attributes = list(i.attrs.values())
-                    content_to_search = "".join(str(attributes))
-                else:
-                    content_to_search = str(i)
-                found_urls = re.findall(pattern, content_to_search)
-                for url in found_urls:
-                    print('url: ',url)
-                    if url.strip() in ["","/","."]:
-                        continue
-                    print(type(url))
-                    urls.add(url)
-                    yield url
-                final_content += content_to_search
-        else:
-            final_content = content
-            found_urls = re.findall(pattern, final_content)
-            for url in found_urls:
-                print('url: ',url)
-                if url.strip() in ["","/","."]:
-                    continue
-                urls.add(url[1])
-                yield url[1]
+        final_content = content
+        found_urls = re.findall(pattern, final_content, re.IGNORECASE | re.VERBOSE)
+        print(f"FOR: {self.url.geturl()}")
+        for url in found_urls:
+            if url[1].strip() in ["","/",".","'","\"","''","\"\""]:
+                continue
+            urls.add(url)
+            print(url)
+            yield url
 
-        self.logs.write("\n=====================\nURL FIND COMPLETE !!!!\n=====================\n")
+        if self.maintain_logs:
+            self.logs.write("\n=====================\nURL FIND COMPLETE !!!!\n=====================\n")
         
     def add_parent(self, parent):
         if self.file_location!="":
-            with open(os.path.join(parent.file_location, parent.fileName), 'r', encoding='utf-8') as file:
-                a = file.read()
+            a = parent.content
             tempi_lala = os.path.join(self.file_location, self.fileName)
-            a = a.replace(self.prev_link, os.path.relpath(tempi_lala, parent.file_location))
-            with open(os.path.join(parent.file_location, parent.fileName), 'w') as file:
-                file.write(a)
+            atemp = a.replace(self.prev_link, os.path.relpath(tempi_lala, parent.file_location).replace("\\","/"))
+            parent.content = atemp
+            with open(os.path.join(parent.file_location, parent.fileName), 'w',encoding='utf-8') as file:
+                try:
+                    file.write(atemp)
+                except Exception as g:
+                    print(g)
+                    try:
+                        file.write(str(atemp))
+                    except Exception as e:
+                        print(e)
+                        result = chardet.detect(atemp)
+                        encoding = result['encoding']
+                        decoded_data = atemp.decode(encoding, errors="replace")
+                        file.write(decoded_data)
             return True
         else:
             return False
@@ -275,12 +294,9 @@ class Webpage:
             content = self.download_resource(self.url.geturl(), self.file_type, self.content)
         except Exception as e:
             raise e
-        
         self.type = content.get('file_type')
         file_content = content.get('file_content')
         self.content = file_content
-        if self.type=="text/html":
-            file_content = file_content.prettify()
         ppp = self.create_offline_location(self.url, content.get('file_type'),True)
         
 
@@ -318,7 +334,7 @@ class Website:
 
         # Frequently used ones stored !
         self.url = urlparse(urllib.parse.quote(settings.get('url').replace("\\","/"), safe=":/"))
-        self.base_file = Webpage(self.url, self, "text/html", settings.get('same_origin_deviation'), settings.get('max_cors'), self.url, None, settings.get('download_res'), settings.get('download_cors_res'))
+        self.base_file = Webpage(self.url, self, "text/html", settings.get('same_origin_deviation'), settings.get('max_cors'), self.url.geturl(), None, settings.get('download_res'), settings.get('download_cors_res'))
         self.location = settings.get('location')
         self.cors = settings.get('cors')
         self.scrape_level = settings.get('same_origin_deviation') # Max grandchildren for same origin urls
@@ -346,13 +362,16 @@ class Website:
             
     def correct_url(self, url, webpage = None):
         if not url.startswith("/") or not webpage:
-            return url
+            if not url.startswith("http") and not url.startswith("www"):
+                return "https://"+url
+            else:
+                return url
         if webpage.url.hostname:
             return os.path.join(str(webpage.url.scheme)+ "://", str(webpage.url.hostname), url[1:])
         else:
             return os.path.join(str(self.url.scheme)+ "://", str(self.url.hostname), url[1:])
 
-    async def download(self):
+    def download(self):
         """Downloads a complete website based on the settings passed while construction.
 
         Returns:
@@ -369,11 +388,13 @@ class Website:
         # temp_event = threading.Event()
         # temp_event.set()
         # threading.Thread(target=loading_animation.load_animation, args=(["CLIMBING MT.EVEREST TO FETCH YOUR WEBSITE ","FIGHTING THE DEVILS TO PREVENT COPYRIGHT  ","GOING TO MARS FOR FASTER INTERNET SPEEEED ","ASKING YOUR CRUSH FOR APPROVAL # FETCHING "], temp_event)).start()
-        print(f"Thread started for {self.url.geturl()}")
+        # print(f"Thread started for {self.url.geturl()}")
         self.download_webpage(self.base_file)
         for i in self.threads:
             i[1].join()
-        
+            
+
+        # print(self.webpages_scraped.get(self.url.geturl()))
         if self.webpages_scraped.get(self.url.geturl()):
             self.failed = not self.webpages_scraped.get(self.url.geturl())[2]
         else:
@@ -392,22 +413,24 @@ class Website:
     def download_webpage(self,web_page):
         try:
             success = web_page.download()
+            # print("success: ",success)
+            # sys.exit()
             if success:
-                print('success')
                 self.webpages_scraped[web_page.prev_link] = (web_page, False, True)
-                urls = web_page.find_urls(web_page.content, True if web_page.file_type in ["text/html", "text/xml", "text/xhtml"] else False)
+                urls = web_page.find_urls(web_page.content)
                 temp_threads = []
                 for url in urls:
-                    print(f'Thread started for {url}')
+                    # print(f'Thread started for {url}')
                     t = threading.Thread(target=self.check_and_call, args=(web_page, url))
                     temp_threads.append(t)
                     t.start()
-                    self.special.write(f"Thread started for {url}")
+                    self.special.write(f"\n- Thread started for {url}")
+
                 for t in temp_threads:
                     t.join()
             else:
-                print('fail')
                 self.webpages_scraped[web_page.prev_link] = (web_page, False, False)
+                return
 
         except Exception as e:
             self.webpages_scraped[web_page.prev_link] = (web_page, False, False)
@@ -420,6 +443,7 @@ class Website:
                     exception_string = f"Error: {e.args[0]} \nExtra: Couldn't traceback"
                 self.logger.write(f"\n\nDownload Failed | {web_page.url.geturl()} |\n\n")
                 self.logger.write(f"Error: {exception_string}")
+                # print(exception_string)
                 
     def check_and_call(self, web_page, url):
         try:
@@ -427,31 +451,48 @@ class Website:
             if url in self.resources_downloaded:
                 temp = self.resources_downloaded.get(url)
                 if temp and temp[2]:
-                    print(f"Skipped | {url} |")
+                    # print(f"Skipped | {url} |")
                     to_be_done = False
                     file_path = os.path.join(web_page.file_location, web_page.fileName)
-                    with open(file_path,'r') as file:
-                        file_contents = file.read()
-                    file_contents.replace(url, temp[0])
-                    with open(file_path, 'w') as file:
-                        file.write(file_contents)
+                    file_contents = web_page.content
+                    file_contents = file_contents.replace(url, os.path.relpath(temp[4], web_page.file_location).replace("\\","/"))
+                    web_page.content = file_contents
+                    with open(file_path, 'w',encoding='utf-8') as file:
+                        try:
+                            file.write(file_contents)
+                        except Exception as g:
+                            print(g)
+                            try:
+                                file.write(str(file_contents))
+                            except Exception as e:
+                                print(e)
+                                result = chardet.detect(file_contents)
+                                encoding = result['encoding']
+                                decoded_data = file_contents.decode(encoding, errors="replace")
+                                file.write(decoded_data)
 
             if to_be_done:
                 new_url = self.correct_url(url, web_page)
                 new_url = new_url.replace("\\","/")
                 url_requested = urllib.parse.quote(new_url, safe=":/")
                 try:
-                    content = urllib.request.urlopen(url_requested).read()
+                    content = download_resource_safe(url_requested)
                 except Exception:
                     try:
-                        content = urllib.request.urlopen("https://www.example.com").read()
+                        content = download_resource_safe("https://www.example.com")
                     except Exception:
                         raise exceptions.NoInternetConnection()
                     raise exceptions.FileDownloadError(url)
                 with open("file_types.json","r") as f:
-                    mimes = json.load(f)['mime_types']
-                type_file = magic.from_buffer(content, mime=True)
-                if type_file == 'text/plain':
+                    mimes = json.load(f)
+                    mimes = mimes['mime_types']
+                redo = False
+                type_file = None
+                try:
+                    type_file = magic.from_buffer(content, mime=True)
+                except:
+                    redo = True
+                if  redo or type_file == 'text/plain':
                     types_man = os.environ.get('file_types', '[]')
                     if types_man:
                         file_types=eval(types_man)
@@ -470,13 +511,13 @@ class Website:
                     temp2 = self.webpages_scraped.get(url)
                     if temp2 and temp==temp2[0]:
                         if temp2[1]:
-                            print(f"Skipped | {url} |")
+                            # print(f"Skipped | {url} |")
                             atry = temp2[0].add_parent(web_page)
                             if not atry:
                                 temp2[0].parents.append(web_page)
                             return
                         elif temp2[2]:
-                            print(f"Skipped | {url} |")
+                            # print(f"Skipped | {url} |")
                             temp2[0].add_parent(web_page)
                             return
                     self.webpages_scraped[url] = (temp, True, False)
@@ -484,35 +525,43 @@ class Website:
                     t = threading.Thread(target=self.download_webpage, args=(temp,))
                     self.threads.append((url, t))
                     t.start()
-                    print(f"Success started for {url}")
+                    # print(f"Success started for {url}")
                     if self.settings.get('maintain_logs'):
                         self.logger.write(f"\n\nDownloading Webpage | {new_url} |")
                 else:
                     if ((web_page.url.hostname == temporary_made_url.hostname or self.url.hostname == temporary_made_url.hostname) and web_page.download_res) or (web_page.url.hostname!=temporary_made_url.hostname and self.url.hostname!=temporary_made_url.hostname and web_page.download_cors_res):
                         if self.settings.get('maintain_logs'):
                             self.logger.write(f"\n\nDownloading Resource | {new_url} |")
-                        self.resources_downloaded[url] = (new_url, True, False, type_file)
+                        self.resources_downloaded[url] = (new_url, True, False, type_file, None)
                         temp_location = os.path.join(web_page.file_location, web_page.fileName)
                         a_temp = web_page.download_resource(new_url, type_file, content)
-                        print('came here')
                         location, file_name = web_page.create_offline_location(temporary_made_url, type_file)
                         try:
                             web_page.save_file(location, file_name, a_temp.get('file_content'), a_temp.get('file_type'))
-                            self.resources_downloaded[url] = (new_url, False, True, type_file)
+                            self.resources_downloaded[url] = (new_url, False, True, type_file, os.path.join(location, file_name))
                         except:
-                            self.resources_downloaded[url] = (new_url, False, False, type_file)
-                        with open(temp_location, 'r', encoding='utf-8') as file:
-                            a = file.read()
+                            self.resources_downloaded[url] = (new_url, False, False, type_file, os.path.join(location, file_name))
+
+                        a = web_page.content
                         tempi_boi = os.path.join(location, file_name)
-                        a = a.replace(url, os.path.relpath(tempi_boi, web_page.file_location))
-                        with open(temp_location, "w", encoding='utf-8') as file:
-                            file.write(a)
+                        a_new = a.replace(url, os.path.relpath(tempi_boi, web_page.file_location).replace("\\","/"))
+                        web_page.content = a_new
+                        with open(temp_location, 'w', encoding='utf-8') as file:
+                            try:
+                                file.write(a_new)
+                            except Exception as g:
+                                print(g)
+                                try:
+                                    file.write(str(a_new))
+                                except Exception as e:
+                                    print(e)
+                                    result = chardet.detect(a_new)
+                                    encoding = result['encoding']
+                                    decoded_data = a_new.decode(encoding, errors="replace")
+                                    file.write(decoded_data)
                         if self.settings.get('maintain_logs'):
                             self.logger.write(f"\n\nDownload Complete | {new_url} |")
-                        print(f"Success complete for {url}")
         except Exception as e:
-            # print(e)
-            #self.webpages_scraped[url] = (, False, False)
             if self.settings.get('maintain_logs'):
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 if exc_type and exc_value:
@@ -520,10 +569,9 @@ class Website:
                     exception_string = ''.join(tb.format())
                 else:
                     exception_string = f"Error: {e.args[0]} \nExtra: Couldn't traceback"
-                print(f"Failed | {url} |")
+                # print(f"Failed | {url} |")
                 self.logger.write(f"\n\nDownload Failed | {url} |\n\n")
                 self.logger.write(f"\nError: {exception_string}")
-                # print(exception_string)
                     
 
 def main(website_name):
@@ -542,8 +590,7 @@ def main(website_name):
 
     # Website creation & download !
     website = Website(settings)
-    success = asyncio.run(website.download())
-
+    success = website.download()
     if success:
         return os.path.join(website.index_file_location, "index.html")
     else:
@@ -555,3 +602,5 @@ if a:
     webview.settings['OPEN_EXTERNAL_LINKS_IN_BROWSER'] = False
     window = webview.create_window('MY WEBSITE',a)
     webview.start()
+else:
+    print("bruhhhhhhhhhhhhhhhh")

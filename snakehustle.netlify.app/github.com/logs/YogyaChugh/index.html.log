@@ -1,0 +1,32 @@
+
+Webpage Created | ParseResult(scheme='https', netloc='github.com', path='/YogyaChugh', params='', query='', fragment='') |
+RECEIVED CONTENTS SUCCESSFULLY | https://github.com/YogyaChugh |
+
+
+FILE SAVED SUCCESSFULLY | ./snakehustle.netlify.app/github.com/YogyaChugh\index.html |
+
+
+=========================
+FINDING INTERNAL URLS.....
+=========================
+RECEIVED CONTENTS SUCCESSFULLY | https://github.com/opensearch.xml |
+
+
+FILE SAVED SUCCESSFULLY | ./snakehustle.netlify.app/github.com/opensearch.xml |
+
+
+RECEIVED CONTENTS SUCCESSFULLY | https://github.com/manifest.json |
+
+
+FILE SAVED SUCCESSFULLY | ./snakehustle.netlify.app/github.com/manifest.json |
+
+
+RECEIVED CONTENTS SUCCESSFULLY | https://github.com/fluidicon.png |
+
+
+FILE SAVED SUCCESSFULLY | ./snakehustle.netlify.app/github.com/fluidicon.png |
+
+
+=====================
+URL FIND COMPLETE !!!!
+=====================

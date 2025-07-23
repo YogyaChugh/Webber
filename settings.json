@@ -11,6 +11,6 @@
         "location": ".",
         "maintain_logs": true,
         "show_failed_files": true,
-        "refetch": false
+        "refetch": true
     }
 }
