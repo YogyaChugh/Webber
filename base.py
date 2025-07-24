@@ -76,12 +76,9 @@ class Webpage:
     loc = ""    #temp
     main_files = set() # Contains .html, .css and .js files !
     res_files = set() # Other files !
-    type = None #temp
     maintain_logs = True #temp
     logs = open("webber_unkown.log",'w')
-    is_busy = True
-    is_success = None
-    request_queue = []
+    children = []
     def __init__(self,url, website, file_type, same_origin_deviation, cors_level, prev_link, content = None, download_res = True, download_cors_res = True):
         self.url = url
         self.prev_link = prev_link
@@ -288,78 +285,15 @@ class Webpage:
             self.logs.write("\n=====================\nURL FIND COMPLETE !!!!\n=====================\n")
             self.logs.flush()
         
-    def add_parent(self, parent):
-        if self.file_location!="":
-            parent.request_queue.append(self.url.geturl())
-            if parent.is_success == False:
-                return False
-            if parent.request_queue[0]!=self.url.geturl():
-                pass
-                # print(f"waiting by {url}")
-            elif parent.is_busy:
-                pass
-                # print(f"waiting by {url} ! Is busy")
-                
-            t = 1
-            while parent.request_queue[0]!=self.url.geturl() or parent.is_busy:
-                t+=1
-            else:
-                print(f"waiting complete by {self.url.geturl()}")
-                a = parent.content
-                tempi_lala = os.path.join(self.file_location, self.fileName)
-                atemp = a.replace(self.prev_link, os.path.relpath(tempi_lala, parent.file_location).replace("\\","/"))
-                parent.content = atemp
-                del parent.request_queue[0]
-                if len(parent.request_queue)==0:
-                    print(f"Replaced for {self.url.geturl()}")
-                    with open(os.path.join(parent.file_location, parent.fileName), 'w',encoding='utf-8') as file:
-                        try:
-                            file.write(atemp)
-                        except Exception as g:
-                            print(g)
-                            try:
-                                file.write(str(atemp))
-                            except Exception as e:
-                                print(e)
-                                result = chardet.detect(atemp)
-                                encoding = result['encoding']
-                                decoded_data = atemp.decode(encoding, errors="replace")
-                                file.write(decoded_data)
-                return True
-        else:
-            return False
+
 
     def download(self):
-        urls = []
-
-        try:
-            content = self.download_resource(self.url.geturl(), self.file_type, self.content)
-        except Exception as e:
-            self.is_success = False
-            raise e
-        self.type = content.get('file_type')
+        content = self.download_resource(self.url.geturl(), self.file_type, self.content)
+        self.file_type = content.get('file_type')
         file_content = content.get('file_content')
         self.content = file_content
-        try:
-            ppp = self.create_offline_location(self.url, content.get('file_type'),True)
-        except Exception as e:
-            self.is_success = False
-            raise e
-
-        go_on = True
-        if not self.website.settings.get('refetch') and (os.path.exists(ppp[0] + ppp[1])):
-            pass
-        else:
-            try:
-                self.save_file(ppp[0], ppp[1], file_content, content.get('file_type'))
-            except Exception as e:
-                self.is_success = False
-                raise e
-        for i in self.parents:
-            self.add_parent(i)
-        self.is_busy = False
-        self.is_success = True
         print(f"DOWNLOAD COMPLETE | {self.url.geturl()} |")
+        self.website.webpages_scraped[self.prev_link] = (self, False, True)
         return True
 
 
@@ -469,6 +403,9 @@ class Website:
     
     def download_webpage(self,web_page):
         try:
+            ppp = web_page.create_offline_location(web_page.url, web_page.file_type,True)
+            if not self.settings.get('refetch') and os.path.exists(os.path.join(ppp[0], ppp[1])):
+                return
             done = False
             temp_threads = []
             gg = threading.Thread(target=web_page.download)
@@ -485,27 +422,29 @@ class Website:
                     t.start()
                     self.special.write(f"\n- Thread started for {url}")
                     self.special.flush()
-            else:
-                temp_threads[-1].join()
+
             # print("success: ",success)
             # sys.exit()
-            if web_page.is_success:
-                self.webpages_scraped[web_page.prev_link] = (web_page, False, True)
-                if not done:
-                    urls = web_page.find_urls(web_page.content)
-                    for url in urls:
-                        # print(f'Thread started for {url}')
-                        t = threading.Thread(target=self.check_and_call, args=(web_page, url))
-                        temp_threads.append(t)
-                        t.start()
-                        self.special.write(f"\n- Thread started for {url}")
-                        self.special.flush()
-
-            else:
-                self.webpages_scraped[web_page.prev_link] = (web_page, False, False)
+            if not done:
+                temp_threads[-1].join()
+                temp_threads = []
+                urls = web_page.find_urls(web_page.content)
+                for url in urls:
+                    # print(f'Thread started for {url}')
+                    t = threading.Thread(target=self.check_and_call, args=(web_page, url))
+                    temp_threads.append(t)
+                    t.start()
+                    self.special.write(f"\n- Thread started for {url}")
+                    self.special.flush()
+                    
             
             for t in temp_threads:
                 t.join()
+                
+            for i in web_page.children:
+                web_page.content = web_page.content.replace(i[0], i[1])
+                
+            web_page.save_file(ppp[0], ppp[1], web_page.content, web_page.file_type)
 
         except Exception as e:
             self.webpages_scraped[web_page.prev_link] = (web_page, False, False)
@@ -530,39 +469,8 @@ class Website:
                     # print(f"Skipped | {url} |")
                     to_be_done = False
                     file_path = os.path.join(web_page.file_location, web_page.fileName)
-                    web_page.request_queue.append(url)
-                    if web_page.is_success == False:
-                        raise exceptions.FileDownloadError(file_path)
-                    if web_page.request_queue[0]!=url:
-                        pass
-                        # print(f"waiting by {url}")
-                    elif web_page.is_busy:
-                        pass
-                        # print(f"waiting by {url} ! Is busy")
-                    t = 1
-                    while web_page.request_queue[0]!=url or web_page.is_busy:
-                        t+=1
-                    else:
-                        print(f"waiting complete by {url}")
-                        file_contents = web_page.content
-                        file_contents = file_contents.replace(url, os.path.relpath(temp[4], web_page.file_location).replace("\\","/"))
-                        web_page.content = file_contents
-                        del web_page.request_queue[0]
-                        if len(web_page.request_queue)==0:
-                            print(f"Replaced for {url}")
-                            with open(file_path, 'w',encoding='utf-8') as file:
-                                try:
-                                    file.write(file_contents)
-                                except Exception as g:
-                                    print(g)
-                                    try:
-                                        file.write(str(file_contents))
-                                    except Exception as e:
-                                        print(e)
-                                        result = chardet.detect(file_contents)
-                                        encoding = result['encoding']
-                                        decoded_data = file_contents.decode(encoding, errors="replace")
-                                        file.write(decoded_data)
+                    
+                    web_page.children.append([url, os.path.relpath(temp[4], web_page.file_location).replace("\\","/")])
 
             if to_be_done:
                 # print(f'GOING FOR {url}')
@@ -615,16 +523,8 @@ class Website:
                         return
                     temp2 = self.webpages_scraped.get(url)
                     if temp2 and temp==temp2[0]:
-                        if temp2[1]:
-                            print(f"Skipped | {url} |")
-                            atry = temp2[0].add_parent(web_page)
-                            if not atry:
-                                print(f"FALSE FOR URL {url}")
-                                temp2[0].parents.append(web_page)
-                            return
-                        elif temp2[2]:
-                            print(f"Skipped | {url} |")
-                            temp2[0].add_parent(web_page)
+                        if temp2[1] or temp2[2]:
+                            web_page.children.append(url, os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/"))
                             return
                     self.webpages_scraped[url] = (temp, True, False)
                     temp.parents.append(web_page)
@@ -651,40 +551,8 @@ class Website:
                         except:
                             self.resources_downloaded[url] = (new_url, False, False, type_file, os.path.join(location, file_name))
                         
-                        web_page.request_queue.append(url)
-                        if web_page.is_success == False:
-                            raise exceptions.FileDownloadError(os.path.join(location, file_name))
-                        if web_page.request_queue[0]!=url:
-                            pass
-                            # print(f"waiting by {url}")
-                        elif web_page.is_busy:
-                            pass
-                            # print(f"waiting by {url} ! Is busy")
-                        t = 1
-                        while web_page.request_queue[0]!=url or web_page.is_busy:
-                            t+=1
-                        else:
-                            print(f"waiting complete by {url}")
-                            a = web_page.content
-                            tempi_boi = os.path.join(location, file_name)
-                            a_new = a.replace(url, os.path.relpath(tempi_boi, web_page.file_location).replace("\\","/"))
-                            web_page.content = a_new
-                            del web_page.request_queue[0]
-                            if len(web_page.request_queue)==0:
-                                print(f"Replaced for {url}")
-                                with open(temp_location, 'w', encoding='utf-8') as file:
-                                    try:
-                                        file.write(a_new)
-                                    except Exception as g:
-                                        print(g)
-                                        try:
-                                            file.write(str(a_new))
-                                        except Exception as e:
-                                            print(e)
-                                            result = chardet.detect(a_new)
-                                            encoding = result['encoding']
-                                            decoded_data = a_new.decode(encoding, errors="replace")
-                                            file.write(decoded_data)
+                        web_page.children.append(url, os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/"))
+                                
                         if self.settings.get('maintain_logs'):
                             self.logger.write(f"\n\nDownload Complete | {new_url} |")
                             self.logger.flush()

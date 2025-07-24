@@ -1,6 +1,8 @@
 import pygame_textinput
+from PIL import Image
 import pygame
 import time
+import cv2
 
 pygame.init()
 
@@ -36,6 +38,8 @@ rocket = pygame.image.load("assets/rocket_icon.png")
 exclamation = pygame.image.load("assets/exclamation.png")
 delete = pygame.image.load("assets/delete.png")
 pause = pygame.image.load("assets/pause.png")
+play = pygame.image.load("assets/play.png")
+cancel = pygame.image.load("assets/cancel.png")
 
 
 btn_img = pygame.transform.scale(btn_img, (314, 74))
@@ -46,6 +50,8 @@ spider_hanging_img = pygame.transform.scale(spider_hanging_img, (313, 267))
 exclamation = pygame.transform.scale(exclamation, (32, 35))
 delete = pygame.transform.scale(delete, (35, 35))
 pause = pygame.transform.scale(pause, (35, 35))
+play = pygame.transform.scale(play, (35, 35))
+cancel = pygame.transform.scale(cancel, (30, 30))
 
 
 rect = img.get_rect()
@@ -66,6 +72,7 @@ hover_downloads = False
 DOWNLOADS_HOVER = pygame.USEREVENT
 pressed_downloads = False
 DOWNLOADS_PRESSED = pygame.USEREVENT
+CANCEL_PRESSED = pygame.USEREVENT
 
 surf = pygame.image.load("assets/mouse.png")
 surf = pygame.transform.scale(surf, (50,50))
@@ -99,7 +106,7 @@ rect6.x = 0
 rect6.y = 0
 rect6.w = 313
 rect6.h = 267
-page_num = 3
+page_num = 1
 
 rectangle1 = pygame.Rect(780, 20, 200, 50)
 rectangle2 = pygame.Rect(815, 30, 200, 50)
@@ -108,7 +115,19 @@ rectji = pygame.Rect(10, 10, 200, 50)
 rectji2 = pygame.Rect(15, 15, 50, 40)
 rectji3 = pygame.Rect(30, 25, 40, 40)
 
-
+gif = Image.open("assets/spiderrr.gif")
+frames = []
+try:
+    while True:
+        frame = gif.copy().convert("RGBA")
+        mode = frame.mode
+        size = frame.size
+        data = frame.tobytes()
+        surf = pygame.image.fromstring(data, size, mode)
+        frames.append(surf)
+        gif.seek(gif.tell() + 1)
+except EOFError:
+    pass  # All frames loaded
 
 something_done = True
 change_page = False
@@ -118,6 +137,16 @@ launch_press_allow = True
 
 # rect, launch text, rocket img, rotation, launched?, animation_complete?, (i[0]+700, i[1]+18,39, 39)
 alist = [[[50,100,900,200], True, [rocket.copy(), 0, False, False,[753, 122,39, 39]], True, [], True, []], [[50,350,900,200], True, [rocket.copy(), 0, False, False,[753, 372,39, 39]], True, [], True, []], [[50,600,900,200], True, [rocket.copy(), 0, False, False,[753, 622,39, 39]], True, [], True, []]]
+
+frame_num = 0
+
+set_cursor_back3 = True
+paused = False
+canceled = False
+rect_play_pause = pygame.Rect(530, 100, 50, 50)
+cancel_color = (255, 255, 255)
+rect_cancel = pygame.Rect(600, 100, 180, 50)
+circle_rect = pygame.draw.circle(screen, (30, 28, 34), (795, 83), 28)
 
 while True:
     events = pygame.event.get()
@@ -298,21 +327,39 @@ while True:
         a = font3.render("Summer of Making",True,(255, 255, 255)) #NAME
         screen.blit(a, [225, 110, 600, 500])
         
-        pygame.draw.rect(screen, (255, 215, 0), [530, 100, 50, 50], border_radius=12)
-        pygame.draw.rect(screen, (0,0,0), [530, 100, 50, 50],4, border_radius=12)
-        screen.blit(pause, [537, 108])
+        pygame.draw.rect(screen, (255, 215, 0), rect_play_pause, border_radius=12)
+        pygame.draw.rect(screen, (0,0,0), rect_play_pause,4, border_radius=12)
+        if paused:
+            screen.blit(play, [537, 108])
+        else:
+            screen.blit(pause, [537, 108])
             
-        pygame.draw.rect(screen, (210, 4, 45), [600, 100, 180, 50], border_radius=12)
-        pygame.draw.rect(screen, (0,0,0), [600, 100, 180, 50],4, border_radius=12)
+        pygame.draw.rect(screen, (210, 4, 45), rect_cancel, border_radius=12)
+        pygame.draw.rect(screen, (0,0,0), rect_cancel,4, border_radius=12)
+        
+        b = font3.render("Cancel",True,cancel_color) #NAME
+        screen.blit(b, [638, 107, 180, 50])
         
         pygame.draw.rect(screen, (44, 42, 49), [220, 285, 560, 280], border_radius=20)
         pygame.draw.rect(screen, (0, 0, 0), [220, 285, 560, 280], 4, border_radius=20)
         
-        movie = pygame.movie.Movie('assets/sp.mp4')
-        mrect = pygame.Rect(0,0,140,113)
-        movie.set_display(screen, mrect.move(65, 150))
-        movie.set_volume(0)
-        movie.play()
+        circle_rect = pygame.draw.circle(screen, (30, 28, 34), (795, 83), 28)
+        pygame.draw.circle(screen, (0, 0, 0), (795, 83), 28, 5)
+        screen.blit(cancel, (780, 68))
+        
+        screen.blit(frames[frame_num], (420, 198))
+        pygame.display.update()
+        frame_num = (frame_num + 1) % len(frames)
+        
+        
+        if (pos[0]>600 and pos[0]<780 and pos[1]>100 and pos[1]<150) or (pos[0]>530 and pos[0]<580 and pos[1]>100 and pos[1]<150) or (circle_rect.collidepoint(pos)):
+            set_cursor_back3 = False
+            pygame.mouse.set_cursor(nw_mouse2)
+        else:
+            set_cursor_back3 = True
+            
+        if set_cursor_back3:
+            pygame.mouse.set_cursor(nw_mouse)
 
     for event in events:
         if event.type == pygame.QUIT:
@@ -337,6 +384,21 @@ while True:
                     if event.pos[0]>i[0]+685 and event.pos[0]<i[0]+865 and event.pos[1]>i[1]+14 and event.pos[1]<i[1]+64:
                         j[2][2] = True
                         launch_press_allow = False
+                        
+            if page_num == 3 and rect_play_pause.collidepoint(event.pos):
+                paused = not paused
+            
+            if page_num == 3 and rect_cancel.collidepoint(event.pos):
+                if not canceled:
+                    canceled = True
+                    cancel_color = (0,0,0)
+                    pygame.time.set_timer(CANCEL_PRESSED, 100)
+            
+            if page_num == 3 and circle_rect.collidepoint(event.pos):
+                page_num = 1
+                
+        if event.type == CANCEL_PRESSED:
+            cancel_color = (255, 255, 255)        
                 
         if event.type == pygame.MOUSEWHEEL:
             if event.y<0 and alist[-1][0][1]>400:
@@ -351,6 +413,7 @@ while True:
         if event.type == STARTED and pressed and page_num == 1:
             rect4.y -= 1
             pressed = False
+            page_num = 3
         if event.type == DOWNLOADS_PRESSED and pressed_downloads and page_num == 1:
             rectangle1.y -= 5
             rectangle2.y -= 5

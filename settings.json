@@ -7,7 +7,7 @@
         "cors_download_res": true,
         "cors_download_cors_res": false,
         "max_cors": 1,
-        "same_origin_deviation": 0,
+        "same_origin_deviation": 1,
         "location": ".",
         "maintain_logs": true,
         "show_failed_files": true,
