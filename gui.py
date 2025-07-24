@@ -1,10 +1,12 @@
 import pygame_textinput
 import pygame
 import time
+
 pygame.init()
 
 font = pygame.font.Font("assets/VarelaRound-Regular.ttf", 24)
 font2 = pygame.font.Font("assets/LuckiestGuy-Regular.ttf", 30)
+font3 = pygame.font.Font("assets/FiraSans-Bold.ttf", 30)
 
 # Create TextInput-object
 manager = pygame_textinput.TextInputManager(validator=lambda input: len(input) <= 35)
@@ -18,7 +20,7 @@ clock = pygame.time.Clock()
 logo = pygame.image.load("assets/spider_logo_main.png")
 logo3 = pygame.transform.scale(logo, (96, 96))
 logo2 = pygame.transform.scale(logo, (64,64))
-pygame.display.set_icon(logo2)
+pygame.display.set_icon(logo)
 pygame.display.set_caption("Webber")
 
 aleft = pygame.image.load("assets/arrow_left.svg")
@@ -30,11 +32,21 @@ btn_img = pygame.image.load("assets/w_button_ji.png")
 btn_img_clicked = pygame.image.load("assets/w_button_ji_animated.png")
 spider_img = pygame.image.load("assets/spider.png")
 spider_hanging_img = pygame.image.load("assets/hanging_spider.png")
+rocket = pygame.image.load("assets/rocket_icon.png")
+exclamation = pygame.image.load("assets/exclamation.png")
+delete = pygame.image.load("assets/delete.png")
+pause = pygame.image.load("assets/pause.png")
+
 
 btn_img = pygame.transform.scale(btn_img, (314, 74))
 btn_img_clicked = pygame.transform.scale(btn_img_clicked, (314, 74))
 spider_img = pygame.transform.scale(spider_img, (254, 186))
 spider_hanging_img = pygame.transform.scale(spider_hanging_img, (313, 267))
+# rocket = pygame.transform.scale(rocket, (39, 39))
+exclamation = pygame.transform.scale(exclamation, (32, 35))
+delete = pygame.transform.scale(delete, (35, 35))
+pause = pygame.transform.scale(pause, (35, 35))
+
 
 rect = img.get_rect()
 rect2 = btn_img.get_rect()
@@ -87,7 +99,7 @@ rect6.x = 0
 rect6.y = 0
 rect6.w = 313
 rect6.h = 267
-page_num = 1
+page_num = 3
 
 rectangle1 = pygame.Rect(780, 20, 200, 50)
 rectangle2 = pygame.Rect(815, 30, 200, 50)
@@ -97,11 +109,15 @@ rectji2 = pygame.Rect(15, 15, 50, 40)
 rectji3 = pygame.Rect(30, 25, 40, 40)
 
 
+
 something_done = True
 change_page = False
 do = True
+launch_text = True
+launch_press_allow = True
 
-alist = [[50,100,900,200], [50,350,900,200], [50,600,900,200]]
+# rect, launch text, rocket img, rotation, launched?, animation_complete?, (i[0]+700, i[1]+18,39, 39)
+alist = [[[50,100,900,200], True, [rocket.copy(), 0, False, False,[753, 122,39, 39]], True, [], True, []], [[50,350,900,200], True, [rocket.copy(), 0, False, False,[753, 372,39, 39]], True, [], True, []], [[50,600,900,200], True, [rocket.copy(), 0, False, False,[753, 622,39, 39]], True, [], True, []]]
 
 while True:
     events = pygame.event.get()
@@ -156,35 +172,148 @@ while True:
             time.sleep(0.25)
             page_num = 2
     elif page_num == 2:
-        for i in alist:
-            pygame.draw.rect(screen, (26, 26, 26), i, border_radius=12)
-            pygame.draw.rect(screen, (0, 0, 0), i, 8, border_radius=12)
-            screen.blit(logo3, (i[0]+840,i[1]+140,96,96))
-            a = font.render("Summer of Making",True,(188, 186, 255))
-            screen.blit(a, (i[0]+30, i[1]+30,i[2],i[3]))
-            pygame.draw.line(screen, (0,0,0), (i[0]+30, i[1]+70), (i[0]+i[2]-30, i[1]+70),6)
+        set_cursor_back = True
+        set_cursor_back2 = True
+        for j in alist:
+            i = j[0]
+            
+            #BUTTONS
+            # temprect_launch.add(pygame.Rect(i[0]+685,i[1]+14, 180, 45))
+            pygame.draw.rect(screen, (211, 214, 219), (i[0]+685,i[1]+14, 180, 50), border_radius=12)
+            pygame.draw.rect(screen, (0,0,0), (i[0]+685,i[1]+14, 180, 50),4, border_radius=12)
+            if j[1]:
+                c = font3.render("Launch", True, (0,0,0))
+                screen.blit(c, (i[0]+750,i[1]+21, 200, 50))
+                
+            screen.blit(j[2][0], j[2][4])
+            
+            
+            # Main box
+            pygame.draw.rect(screen, (26, 26, 26), (i[0], i[1], 685, i[3]), border_radius=12) #Black box
+            pygame.draw.rect(screen, (26, 26, 26), (i[0]+685, i[1]+64, i[2]-685, i[3]-64), border_radius=12) #Black box
+            pygame.draw.rect(screen, (26, 26, 26), (i[0]+685, i[1], i[2]-685, 14), border_radius=12) #Black box
+            pygame.draw.rect(screen, (26, 26, 26), (i[0]+685+180, i[1]+14, i[2]-685-180, 50), border_radius=12) #Black box
+            
+            
+            
+            pygame.draw.rect(screen, (0, 0, 0), i, 8, border_radius=12) #Black box border
+            screen.blit(logo3, (i[0]+840,i[1]+140,96,96)) # Spider logo on right
+            
+            # DATA
+            a = font3.render("Summer of Making",True,(255, 255, 255)) #NAME
+            screen.blit(a, (i[0]+33, i[1]+26,i[2],i[3]))
+            
+            pygame.draw.line(screen, (0,0,0), (i[0]+30, i[1]+70), (i[0]+i[2]-30, i[1]+70),6) #LINE SEPARATION
+            
+            b = font.render("https://summer.hackclub.com",True,(255, 255, 255)) #URL
+            screen.blit(b, (i[0]+33, i[1]+85,i[2],i[3]))
+            
+            pygame.draw.rect(screen, (255, 215, 0), (i[0]+30,i[1]+135, 180, 50), border_radius=12)
+            pygame.draw.rect(screen, (0,0,0), (i[0]+30,i[1]+135, 180, 50),4, border_radius=12)
+            if j[3]:
+                c = font3.render("!   INFO", True, (0,0,0))
+                screen.blit(c, (i[0]+75,i[1]+142, 200, 50))
+            # screen.blit(exclamation, (i[0]+60,i[1]+143, 200, 50))
+            
+            
+            pygame.draw.rect(screen, (255, 0, 0), (i[0]+230,i[1]+135, 180, 50), border_radius=12)
+            pygame.draw.rect(screen, (0,0,0), (i[0]+230,i[1]+135, 180, 50),4, border_radius=12)
+            if j[5]:
+                c = font3.render("DELETE", True, (0,0,0))
+                screen.blit(c, (i[0]+290,i[1]+142, 200, 50))
+            screen.blit(delete, (i[0]+250,i[1]+141, 200, 50))
+            
+            # Check for launch
+            if pos[0]>i[0]+685 and pos[0]<i[0]+865 and pos[1]>i[1]+14 and pos[1]<i[1]+64:
+                set_cursor_back = False
+                if launch_press_allow:
+                    change = True
+                else:
+                    change = False
+                    if not j[2][2]:
+                        pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_NO)
+            else:
+                change = False
+                
+            # Check for Delete & Info
+            if (pos[0]>i[0]+230 and pos[0]<i[0]+410 and pos[1]>i[1]+135 and pos[1]<i[1]+185) or (pos[0]>i[0]+30 and pos[0]<i[0]+210 and pos[1]>i[1]+135 and pos[1]<i[1]+185):
+                set_cursor_back = False
+                pygame.mouse.set_cursor(nw_mouse2)
+                
+                
+            if change:
+                if j[2][1]==0:
+                    pygame.mouse.set_cursor(nw_mouse2)
+                    j[2][1] = 360
+                elif j[2][1]!=270:
+                    j[2][1] -= 15
+                j[1] = False
+                if j[2][1]!=0:
+                    j[2][0] = pygame.transform.rotate(rocket, j[2][1])
+            else:
+                if j[2][1]!=0 and not j[2][2]:
+                    if j[2][1]!=360:
+                        j[2][1]+= 15
+                    else:
+                        j[2][1]=0
+                        set_cursor_back = True
+                    j[1] = True
+                    j[2][0] = pygame.transform.rotate(rocket, j[2][1])
+                    
+            if j[2][2] and not j[2][3]:
+                j[2][4][0] += 20
+                if j[2][4][0]>i[0]+180+665:
+                    j[2][3] = True
+                    
         
         pygame.draw.rect(screen, (232, 232, 232), rectji , border_radius=12)
         back = font.render("Go Back", True, (0,0,0))
         if do:
             screen.blit(back, (85, 20, 200, 50))
-        pygame.draw.rect(screen, (74, 222, 128), rectji2 , border_radius=12)
+        pygame.draw.rect(screen, (157,0,255), rectji2 , border_radius=12)
         screen.blit(aleft, rectji3)
         
         if rectji.collidepoint(pos):
             pygame.mouse.set_cursor(nw_mouse2)
+            set_cursor_back2 = False
             do = False
             if rectji2.w<=180:
                 rectji2.w += 10
             if rectji3.x<=80:
                 rectji3.x += 10
         else:
-            pygame.mouse.set_cursor(nw_mouse)
+            set_cursor_back2 = True
             do = True
             if rectji2.w>=50:
                 rectji2.w -= 10
             if rectji3.x>=30:
                 rectji3.x -= 10
+                
+        if set_cursor_back and set_cursor_back2:
+            pygame.mouse.set_cursor(nw_mouse)
+    elif page_num==3:
+        pygame.draw.rect(screen, (30, 28, 34), [200, 83, 600, 500], border_radius=20)
+        pygame.draw.rect(screen, (0, 0, 0), [200, 83, 600, 500], 8, border_radius=20)
+        
+        a = font3.render("Summer of Making",True,(255, 255, 255)) #NAME
+        screen.blit(a, [225, 110, 600, 500])
+        
+        pygame.draw.rect(screen, (255, 215, 0), [530, 100, 50, 50], border_radius=12)
+        pygame.draw.rect(screen, (0,0,0), [530, 100, 50, 50],4, border_radius=12)
+        screen.blit(pause, [537, 108])
+            
+        pygame.draw.rect(screen, (210, 4, 45), [600, 100, 180, 50], border_radius=12)
+        pygame.draw.rect(screen, (0,0,0), [600, 100, 180, 50],4, border_radius=12)
+        
+        pygame.draw.rect(screen, (44, 42, 49), [220, 285, 560, 280], border_radius=20)
+        pygame.draw.rect(screen, (0, 0, 0), [220, 285, 560, 280], 4, border_radius=20)
+        
+        movie = pygame.movie.Movie('assets/sp.mp4')
+        mrect = pygame.Rect(0,0,140,113)
+        movie.set_display(screen, mrect.move(65, 150))
+        movie.set_volume(0)
+        movie.play()
+
     for event in events:
         if event.type == pygame.QUIT:
             exit()
@@ -201,17 +330,23 @@ while True:
             if rectji.collidepoint(event.pos) and page_num == 2:
                 time.sleep(0.25)
                 page_num = 1
+                
+            if page_num == 2 and launch_press_allow:
+                for j in alist:
+                    i = j[0]
+                    if event.pos[0]>i[0]+685 and event.pos[0]<i[0]+865 and event.pos[1]>i[1]+14 and event.pos[1]<i[1]+64:
+                        j[2][2] = True
+                        launch_press_allow = False
+                
         if event.type == pygame.MOUSEWHEEL:
-            if event.y<0 and alist[-1][1]>400:
+            if event.y<0 and alist[-1][0][1]>400:
                 for i in range(len(alist)):
-                    alist[i] = (alist[i][0], alist[i][1]-30, alist[i][2], alist[i][3])
-                for i in alist:
-                    i = (i[0],i[1]-2,i[2],i[3])
-            elif event.y>=0 and alist[0][1]<100:
+                    alist[i][0][1] -= 50
+                    alist[i][2][4][1] -= 50
+            elif event.y>=0 and alist[0][0][1]<100:
                 for i in range(len(alist)):
-                    alist[i] = (alist[i][0], alist[i][1]+30, alist[i][2], alist[i][3])
-                for i in alist:
-                    i = (i[0],i[1]-2,i[2],i[3])
+                    alist[i][0][1] += 50
+                    alist[i][2][4][1] += 50
                 
         if event.type == STARTED and pressed and page_num == 1:
             rect4.y -= 1

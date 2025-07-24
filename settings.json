@@ -1,13 +1,13 @@
 {
     "Website 1": {
-        "url": "https://snakehustle.netlify.app",
+        "url": "https://summer.hackclub.com",
         "download_res": true,
         "download_cors_res": true,
-        "cors": true,
+        "cors": false,
         "cors_download_res": true,
         "cors_download_cors_res": false,
         "max_cors": 1,
-        "same_origin_deviation": 2,
+        "same_origin_deviation": 0,
         "location": ".",
         "maintain_logs": true,
         "show_failed_files": true,
