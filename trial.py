@@ -2,19 +2,7 @@ from PIL import Image
 import pygame
 
 # Load animated GIF frames
-gif = Image.open("assets/spiderrr.gif")
-frames = []
-try:
-    while True:
-        frame = gif.copy().convert("RGBA")
-        mode = frame.mode
-        size = frame.size
-        data = frame.tobytes()
-        surf = pygame.image.fromstring(data, size, mode)
-        frames.append(surf)
-        gif.seek(gif.tell() + 1)
-except EOFError:
-    pass  # All frames loaded
+
 
 # Pygame setup
 pygame.init()
