@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 import urllib.parse
 import exceptions
+import shutil
 import os
 import json
 from bs4 import BeautifulSoup
@@ -13,11 +14,26 @@ import sys
 import magic
 from webpage import *
 
+class StoppableThread(threading.Thread):
+    """Thread class with a stop() method. The thread itself has to check
+    regularly for the stopped() condition."""
+
+    def __init__(self,  *args, **kwargs):
+        super(StoppableThread, self).__init__(*args, **kwargs)
+        self._stop_event = threading.Event()
+
+    def stop(self):
+        self._stop_event.set()
+
+    def stopped(self):
+        return self._stop_event.is_set()
+
 class Website:
     """
         Class representing a website as in URL !
     """
     url = None
+    stopped = False
     location = ""
     cors = False
     scrape_level = 0
@@ -29,14 +45,20 @@ class Website:
     failed = False         # Whether fetching URLS failed
     thread_count = 0       # Num of threads
     threads = []           # List of tuples of (a thread, url associated with that thread)
+    other_threads = []      # oTHER THREADS CREATEAD by download_webpage
     outputs = {}           # Dictionary mapping each file to it's local_name & all links inside that file with their changed names
     resources_downloaded = {} # Dictionary of resources already downloaded in format {resource_url: (new_url, in_progress #bool, success #bool, file_type)}
     webpages_scraped = {} # Webpages scrapes {url of webpage: (webpage object, in_progress #bool, success #bool)}
+    done = False
+    logs = []
 
     def __init__(self,settings):
-
         # Frequently used ones stored !
-        self.url = urlparse(urllib.parse.quote(settings.get('url').replace("\\","/"), safe=":/"))
+        urlji = urllib.parse.quote(settings.get('url').replace("\\","/"), safe=":/")
+        atempo = urlparse(urlji)
+        if str(atempo.scheme).strip() == "":
+            urlji = "https://" + urlji
+        self.url = urlparse(urlji)
         self.base_file = Webpage(self.url, self, "text/html", settings.get('same_origin_deviation'), settings.get('max_cors'), self.url.geturl(), None, settings.get('download_res'), settings.get('download_cors_res'))
         self.location = settings.get('location')
         self.cors = settings.get('cors')
@@ -83,6 +105,7 @@ class Website:
             bool: Success or Failure
         """
         # RESET
+        print('Called lol')
         self.threads = []
         self.outputs = {}
         self.webpages_scraped = {}
@@ -95,8 +118,9 @@ class Website:
         # threading.Thread(target=loading_animation.load_animation, args=(["CLIMBING MT.EVEREST TO FETCH YOUR WEBSITE ","FIGHTING THE DEVILS TO PREVENT COPYRIGHT  ","GOING TO MARS FOR FASTER INTERNET SPEEEED ","ASKING YOUR CRUSH FOR APPROVAL # FETCHING "], temp_event)).start()
         # print(f"Thread started for {self.url.geturl()}")
         self.download_webpage(self.base_file)
-        for i in self.threads:
+        for i in self.threads.copy():
             i[1].join()
+            self.threads.remove(i[1])
             
 
         # print(self.webpages_scraped.get(self.url.geturl()))
@@ -106,26 +130,30 @@ class Website:
             self.failed = True
 
         # temp_event.clear()
+        self.done = True
         if not self.failed:
             if self.settings.get('maintain_logs'):
                 self.logger.write(f"\n\t\t\t\t================================\n\t\t\t\tSUCCESS SCRAPING WEBSITE {self.url.geturl()}\n\t\t\t\t================================\n")
                 self.logger.flush()
-            return True
         else:
             if self.settings.get('maintain_logs'):
                 self.logger.write(f"\n\t\t\t\t================================\n\t\t\t\tFAILED SCRAPING WEBSITE FOR {self.url.geturl()}\n\t\t\t\t================================\n")
                 self.logger.flush()
-            return False
     
     def download_webpage(self,web_page):
         try:
+            if self.stopped:
+                return
+            self.logs.append(f"Downloading Webpage: {web_page.url.geturl()}")
+            print(f'CALLED FOR {web_page.url.geturl()}')
             ppp = web_page.create_offline_location(web_page.url, web_page.file_type,True)
             if not self.settings.get('refetch') and os.path.exists(os.path.join(ppp[0], ppp[1])):
                 return
             done = False
             temp_threads = []
-            gg = threading.Thread(target=web_page.download)
+            gg = StoppableThread(target=web_page.download)
             temp_threads.append(gg)
+            self.other_threads.append(gg)
             self.webpages_scraped[web_page.prev_link] = (web_page, True, False)
             gg.start()
             if web_page.content:
@@ -135,6 +163,7 @@ class Website:
                     # print(f'Thread started for {url}')
                     t = threading.Thread(target=self.check_and_call, args=(web_page, url))
                     temp_threads.append(t)
+                    self.other_threads.append(t)
                     t.start()
                     self.special.write(f"\n- Thread started for {url}")
                     self.special.flush()
@@ -146,9 +175,10 @@ class Website:
                 temp_threads = []
                 urls = web_page.find_urls(web_page.content)
                 for url in urls:
-                    # print(f'Thread started for {url}')
+                    print(f'Thread started for {url}')
                     t = threading.Thread(target=self.check_and_call, args=(web_page, url))
                     temp_threads.append(t)
+                    self.other_threads.append(t)
                     t.start()
                     self.special.write(f"\n- Thread started for {url}")
                     self.special.flush()
@@ -156,13 +186,16 @@ class Website:
             
             for t in temp_threads:
                 t.join()
+                self.other_threads.remove(t)
                 
             for i in web_page.children:
                 web_page.content = web_page.content.replace(i[0], i[1])
                 
             web_page.save_file(ppp[0], ppp[1], web_page.content, web_page.file_type)
+            self.logs.append(f"Download Success | {web_page.url.geturl()} |")
 
         except Exception as e:
+            self.logs.append(f"Download Failed | {web_page.url.geturl()} |")
             self.webpages_scraped[web_page.prev_link] = (web_page, False, False)
             if self.settings.get('maintain_logs'):
                 exc_type, exc_value, exc_tb = sys.exc_info()
@@ -174,7 +207,7 @@ class Website:
                 self.logger.write(f"\n\nDownload Failed | {web_page.url.geturl()} |\n\n")
                 self.logger.write(f"Error: {exception_string}")
                 self.logger.flush()
-                # print(exception_string)
+                print(exception_string)
                 
     def check_and_call(self, web_page, url):
         try:
@@ -187,6 +220,7 @@ class Website:
                     file_path = os.path.join(web_page.file_location, web_page.fileName)
                     
                     web_page.children.append([url, os.path.relpath(temp[4], web_page.file_location).replace("\\","/")])
+                    self.logs.append(f"Resource Download Success | {url} |")
 
             if to_be_done:
                 # print(f'GOING FOR {url}')
@@ -243,9 +277,10 @@ class Website:
                             web_page.children.append([url, os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")])
                             return
                     self.webpages_scraped[url] = (temp, True, False)
-                    temp.parents.append(web_page)
-                    t = threading.Thread(target=self.download_webpage, args=(temp,))
+                    t = StoppableThread(target=self.download_webpage, args=(temp,))
                     self.threads.append((url, t))
+                    some = temp.create_offline_location(temp.url, type_file, True)
+                    web_page.childen.append(os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location))
                     # print(f'THREAD | {url} |')
                     t.start()
                     # print(f"Success started for {url}")
@@ -272,10 +307,12 @@ class Website:
                         if self.settings.get('maintain_logs'):
                             self.logger.write(f"\n\nDownload Complete | {new_url} |")
                             self.logger.flush()
+                        self.logs.append(f"Resource Download Success | {url} |")
                     else:
                         print(f"Skipped {url}")
                         print(f"CORS RES: {web_page.download_cors_res}")
         except Exception as e:
+            self.logs.append(f"Resource Download Failed | {url} |")
             if self.settings.get('maintain_logs'):
                 exc_type, exc_value, exc_tb = sys.exc_info()
                 if exc_type and exc_value:
@@ -287,6 +324,34 @@ class Website:
                 self.logger.write(f"\n\nDownload Failed | {url} |\n\n")
                 self.logger.write(f"\nError: {exception_string}")
                 self.logger.flush()
+                
+    def cancel(self):
+        self.logger.write("Cancelled Scraping Website !")
+        self.stopped = True
+        for i in self.other_threads:
+            i.stop()
+        for j in self.threads:
+            j.stop()
+        
+        completed_webpages = {}
+        completed_resources = {}
+        for t in self.webpages_scraped:
+            if self.webpages_scraped[t][2] or (not self.webpages_scraped[t][1] and not self.webpages_scraped[t][2]):
+                completed_webpages[t] = self.webpages_scraped[t]
+                
+        for w in self.resources_downloaded:
+            if self.resources_downloaded[w][2] or (not self.resources_downloaded[w][1] and not self.resources_downloaded[w][2]):
+                completed_resources[w] = self.resources_downloaded[w]
+                
+        self.logs.append(f"Paused Downloading Website | {self.url.geturl()} |")
+        return (completed_webpages, completed_resources)
+    
+    def delete(self):
+        loc = os.path.join(self.location, str(self.url.hostname))
+        if os.path.isdir(loc):
+            self.logger.write("Deleted local Website !")
+            shutil.rmtree(loc)
+            self.logs.append(f"Deleted Website | {self.url.geturl()} |")
                     
 
 def main(website_name):
