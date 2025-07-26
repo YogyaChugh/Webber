@@ -50,6 +50,7 @@ class Website:
     resources_downloaded = {} # Dictionary of resources already downloaded in format {resource_url: (new_url, in_progress #bool, success #bool, file_type)}
     webpages_scraped = {} # Webpages scrapes {url of webpage: (webpage object, in_progress #bool, success #bool)}
     done = False
+    canceled = False
     logs = []
 
     def __init__(self,settings):
@@ -118,9 +119,10 @@ class Website:
         # threading.Thread(target=loading_animation.load_animation, args=(["CLIMBING MT.EVEREST TO FETCH YOUR WEBSITE ","FIGHTING THE DEVILS TO PREVENT COPYRIGHT  ","GOING TO MARS FOR FASTER INTERNET SPEEEED ","ASKING YOUR CRUSH FOR APPROVAL # FETCHING "], temp_event)).start()
         # print(f"Thread started for {self.url.geturl()}")
         self.download_webpage(self.base_file)
-        for i in self.threads.copy():
-            i[1].join()
-            self.threads.remove(i[1])
+        if not self.stopped:
+            for i in self.threads.copy():
+                i[1].join()
+            self.threads = []
             
 
         # print(self.webpages_scraped.get(self.url.geturl()))
@@ -161,7 +163,7 @@ class Website:
                 urls = web_page.find_urls(web_page.content)
                 for url in urls:
                     # print(f'Thread started for {url}')
-                    t = threading.Thread(target=self.check_and_call, args=(web_page, url))
+                    t = StoppableThread(target=self.check_and_call, args=(web_page, url))
                     temp_threads.append(t)
                     self.other_threads.append(t)
                     t.start()
@@ -176,7 +178,7 @@ class Website:
                 urls = web_page.find_urls(web_page.content)
                 for url in urls:
                     print(f'Thread started for {url}')
-                    t = threading.Thread(target=self.check_and_call, args=(web_page, url))
+                    t = StoppableThread(target=self.check_and_call, args=(web_page, url))
                     temp_threads.append(t)
                     self.other_threads.append(t)
                     t.start()
@@ -278,11 +280,11 @@ class Website:
                             return
                     self.webpages_scraped[url] = (temp, True, False)
                     t = StoppableThread(target=self.download_webpage, args=(temp,))
-                    self.threads.append((url, t))
                     some = temp.create_offline_location(temp.url, type_file, True)
-                    web_page.childen.append(os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location))
+                    web_page.children.append(os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location))
                     # print(f'THREAD | {url} |')
                     t.start()
+                    self.threads.append((url, t))
                     # print(f"Success started for {url}")
                     if self.settings.get('maintain_logs'):
                         self.logger.write(f"\n\nDownloading Webpage | {new_url} |")
@@ -344,6 +346,7 @@ class Website:
                 completed_resources[w] = self.resources_downloaded[w]
                 
         self.logs.append(f"Paused Downloading Website | {self.url.geturl()} |")
+        self.canceled = True
         return (completed_webpages, completed_resources)
     
     def delete(self):

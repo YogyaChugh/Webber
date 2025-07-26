@@ -7,6 +7,7 @@ import webpage, website
 import os
 import webview
 import asyncio
+import threading
 
 pygame.init()
 
@@ -17,7 +18,7 @@ font4 = pygame.font.Font("assets/FiraSans-Bold.ttf", 40)
 font5 = pygame.font.Font("assets/FiraSans-Bold.ttf", 24)
 font6 = pygame.font.Font("assets/FiraSans-Bold.ttf", 18)
 
-
+some_thread = None
 display_err = False
 display_err_msg = ""
 
@@ -247,15 +248,11 @@ os.environ['file_types'] = str(a['file_types_to_mime'])
 loading_allow = False
 checking = None
 
+at_last = True
 
-task_running = None
 
-
-website_being_downloaded = None
-webpage_possible = None
+website_being_downloaded = None #rename to current website
 completed_checking = False
-
-current_logs = []
 
 def check_if_website_correct():
     valid = None
@@ -287,6 +284,8 @@ def check_if_website_correct():
 
 loop = asyncio.new_event_loop()
 currently_settings = {}
+current_logs = []
+websites = {} # currently_settings, current_logs, renderers
 
 while True:
     events = pygame.event.get()
@@ -486,65 +485,109 @@ while True:
         if set_cursor_back and set_cursor_back2:
             pygame.mouse.set_cursor(nw_mouse)
     elif page_num==3:
-        pygame.draw.rect(screen,  (234, 111, 0), [75, 48, 850, 570], border_radius=20)
+        pygame.draw.rect(screen, (234, 111, 0), [75, 48, 850, 570], border_radius=20)
+        pygame.draw.rect(screen, (44, 42, 49), [220-125, 285-60, 560+250, 280+70+25], border_radius=20)
+        if website_being_downloaded:
+            for i in websites[website_being_downloaded][2]:
+                if not i[1][1]<0 and not i[1][1]>667:
+                    screen.blit(i[0],i[1])
+        pygame.draw.rect(screen, (0, 0, 0), [220-125, 285-60, 560+250, 280+70+25], 4, border_radius=20)
+        pygame.draw.rect(screen,  (234, 111, 0), [75+25, 48, 850-25, 178])
+        # pygame.draw.rect(screen,  (234, 111, 0), [75, 48+225, 20, 570-225])
+        # pygame.draw.rect(screen,  (234, 111, 0), [75+830, 48+225, 20, 570-225])
+        pygame.draw.rect(screen,  (234, 111, 0), [75+25, 225+375, 850-25, 18])
         # screen.blit(simg, (75, 83), (0,0,850,100))
         pygame.draw.rect(screen, (0, 0, 0), [75, 48, 850, 570], 8, border_radius=20)
         screen.blit(img, (75, 0), (75, 0, 850, 48))
-        screen.blit(img, (75, 583+48), (75, 583+48, 850, 667-(583+48)))
+        screen.blit(img, (75, 570+48), (75, 570+48, 850, 667-(570+48)))
         
-        a = font3.render(currently_settings['Name'],True,(255, 255, 255)) #NAME
-        screen.blit(a, [100, 110-35])
+        if website_being_downloaded:
+            a = font3.render(websites[website_being_downloaded][0]['Name'],True,(255, 255, 255)) #NAME
+            screen.blit(a, [100, 110-35])
+            if website_being_downloaded.canceled:
+                some_thread.join()
         circle_rect = pygame.draw.circle(screen, (30, 28, 34), (795+125, 83-35), 28)
         pygame.draw.circle(screen, (0, 0, 0), (795+125, 83-35), 28, 5)
         screen.blit(cancel, (780+125, 68-35))
         
-        # if website_being_downloaded:
-        #     if website_being_downloaded.logs!=currently_settings['logs']:
-        #         currently_settings['logs'] = website_being_downloaded.logs
-        #         g = 0
-        #         for i in website_being_downloaded.logs:
-        #             if i.startswith("Downloading Webpage"):
-        #                 current_logs.append((font.render(i,True, (0,0,0)),(870, 550) if g==0 else (870, current_logs[g-1][1][1]+30)))
-        #             elif i.startswith("Download Success") or i.startswith("Resource Download Success"):
-        #                 current_logs.append((font.render(i,True, (0,0,255)),(870, 550) if g==0 else (870, current_logs[g-1][1][1]+30)))
-        #             elif i.startswith("Download Failed") or i.startswith("Resource Download Failed"):
-        #                 current_logs.append((font.render(i,True, (255,0,0)),(870, 550) if g==0 else (870, current_logs[g-1][1][1]+30)))
-        #             g+=1
-        #         website_being_downloaded.logs = []
-        #     if website_being_downloaded.done or website_being_downloaded.failed:
-        #         if website_being_downloaded and (website_being_downloaded.done or website_being_downloaded.failed) and task_running:
-        #             task_running.join()
-        #             task_running = None
-        #             if website_being_downloaded.done:
-        #                 with open('details.json','r') as file:
-        #                     tempdata = json.load(file)
-        #                 a = tempdata['Websites']
-        #                 a.append(currently_settings)
-        #                 tempdata['Websites'] = a
-        #                 print(tempdata)
-        #                 with open('details.json','w') as file:
-        #                     json.dump(tempdata, file)
-        #     else:
-        pygame.draw.rect(screen, (255, 215, 0), rect_play_pause, border_radius=12)
-        pygame.draw.rect(screen, (0,0,0), rect_play_pause,4, border_radius=12)
-        if paused:
-            screen.blit(play, [537+125, 108-35])
+        if website_being_downloaded:
+            # print('lalalalala')
+            # print(website_being_downloaded.logs)
+            currji = websites[website_being_downloaded][1]
+            currji_lala = websites[website_being_downloaded][2]
+            if currji_lala==[] and currji!=[]:
+                for i in currji:
+                    t = i[:60]
+                    if len(t)!=len(i):
+                        t+="..."
+                    if i.startswith("Downloading Webpage"):
+                        obj = font.render(t,True, (255,255,255))
+                    elif i.startswith("Download Success") or i.startswith("Resource Download Success"):
+                        obj = font.render(t,True, (0,255,0))
+                    elif i.startswith("Download Failed") or i.startswith("Resource Download Failed"):
+                        obj = font.render(t, True, (255,0,0))
+                    else:
+                        obj = font.render(t, True,(255,255,255))
+                    if len(currji_lala)==0:
+                        currji_lala.append([obj,[120, 550]])
+                    else:
+                        currji_lala.append([obj, [120, currji_lala[-1][1][1]+30]])
+                if at_last:
+                    for i in currji_lala:
+                        i[1][1] -= (len(currji)*30)
+                websites[website_being_downloaded][2] = currji_lala
+            if website_being_downloaded.logs!=currji:
+                websites[website_being_downloaded][1] = website_being_downloaded.logs
+                curr = websites[website_being_downloaded][2]
+                curr2 = websites[website_being_downloaded][1]
+                g = True if curr==[] else False
+                p = len(websites[website_being_downloaded][2]) - 1
+                gt = 0
+                for i in website_being_downloaded.logs:
+                    p+=1
+                    gt+=1
+                    t = i[:60]
+                    if len(t)!=len(i):
+                        t+="..."
+                    if i.startswith("Downloading Webpage"):
+                        obj = font.render(t,True, (255,255,255))
+                    elif i.startswith("Download Success") or i.startswith("Resource Download Success"):
+                        obj = font.render(t,True, (0,255,0))
+                    elif i.startswith("Download Failed") or i.startswith("Resource Download Failed"):
+                        obj = font.render(t, True, (255,0,0))
+                    else:
+                        obj = font.render(t, True,(255,255,255))
+                    if p==0:
+                        curr.append([obj,[120, 550]])
+                    else:
+                        curr.append([obj, [120, curr[p-1][1][1]+30]])
+                if at_last:
+                    for i in curr:
+                        i[1][1] -= (gt*30)
+                websites[website_being_downloaded][2] = curr
+                website_being_downloaded.logs = []
+        if website_being_downloaded and not website_being_downloaded.done and not website_being_downloaded.failed:
+            pygame.draw.rect(screen, (255, 215, 0), rect_play_pause, border_radius=12)
+            pygame.draw.rect(screen, (0,0,0), rect_play_pause,4, border_radius=12)
+            if paused:
+                screen.blit(play, [537+125, 108-35])
+            else:
+                screen.blit(pause, [537+125, 108-35])
+            pygame.draw.rect(screen, (210, 4, 45), rect_cancel, border_radius=12)
+            pygame.draw.rect(screen, (0,0,0), rect_cancel,4, border_radius=12)
+            b = font3.render("Cancel",True,cancel_color) #NAME
+            screen.blit(b, [638+125, 107-35, 180, 50])
+            screen.blit(frames[frame_num], (420, 56))
+            pygame.display.update()
+            frame_num = (frame_num + 1) % len(frames)
+            if not page_num==4:
+                if (pos[0]>rect_play_pause[0] and pos[0]<(rect_play_pause[0]+rect_play_pause[2]) and pos[1]>rect_play_pause[1] and pos[1]<(rect_play_pause[1]+rect_play_pause[3])) or (pos[0]>rect_cancel[0] and pos[0]<(rect_cancel[0]+rect_cancel[2]) and pos[1]>rect_cancel[1] and pos[1]<(rect_cancel[1]+rect_cancel[3])) or (circle_rect.collidepoint(pos)):
+                    set_cursor_back3 = False
+                    pygame.mouse.set_cursor(nw_mouse2)
+                else:
+                    set_cursor_back3 = True
         else:
-            screen.blit(pause, [537+125, 108-35])
-        pygame.draw.rect(screen, (210, 4, 45), rect_cancel, border_radius=12)
-        pygame.draw.rect(screen, (0,0,0), rect_cancel,4, border_radius=12)
-        b = font3.render("Cancel",True,cancel_color) #NAME
-        screen.blit(b, [638+125, 107-35, 180, 50])
-        pygame.draw.rect(screen, (44, 42, 49), [220-126, 285-60, 560+250, 280+70+25], border_radius=20)
-        pygame.draw.rect(screen, (0, 0, 0), [220-125, 285-60, 560+250, 280+70+25], 4, border_radius=20)
-        
-        screen.blit(frames[frame_num], (420, 56))
-        pygame.display.update()
-        frame_num = (frame_num + 1) % len(frames)
-        
-        
-        if not page_num==4:
-            if (pos[0]>rect_play_pause[0] and pos[0]<(rect_play_pause[0]+rect_play_pause[2]) and pos[1]>rect_play_pause[1] and pos[1]<(rect_play_pause[1]+rect_play_pause[3])) or (pos[0]>rect_cancel[0] and pos[0]<(rect_cancel[0]+rect_cancel[2]) and pos[1]>rect_cancel[1] and pos[1]<(rect_cancel[1]+rect_cancel[3])) or (circle_rect.collidepoint(pos)):
+            if (pos[0]>rect_cancel[0] and pos[0]<(rect_cancel[0]+rect_cancel[2]) and pos[1]>rect_cancel[1] and pos[1]<(rect_cancel[1]+rect_cancel[3])) or (circle_rect.collidepoint(pos)):
                 set_cursor_back3 = False
                 pygame.mouse.set_cursor(nw_mouse2)
             else:
@@ -687,6 +730,9 @@ while True:
 
                 if page_num == 3 and rect_play_pause.collidepoint(event.pos):
                     paused = not paused
+                    t = threading.Thread(target=website_being_downloaded.cancel)
+                    t.start()
+                    some_thread = t
 
                 if page_num == 3 and rect_cancel.collidepoint(event.pos):
                     if not canceled:
@@ -727,43 +773,42 @@ while True:
                             if same_origin_crawl_limit<9:
                                 same_origin_crawl_limit +=1
                         elif pp == "go_on":
-                            if task_running == None:
-                                temp_website = website.Website({
-                                    'Name': 'Website 1',
-                                    'url': textinput.value,
-                                    "download_res": download_resources_enabled,
-                                    "download_cors_res": download_cors_resources_enabled,
-                                    "cors": cors_enabled,
-                                    "cors_download_res": download_cors_resources_enabled,
-                                    "cors_download_cors_res": False,
-                                    "max_cors": Max_cors,
-                                    "same_origin_deviation": same_origin_crawl_limit,
-                                    "location": ".",
-                                    "maintain_logs": True,
-                                    "show_failed_files": True,
-                                    "refetch": refetch_enabled,
-                                    "logs": []
-                                })
-                                website_being_downloaded = temp_website
-                                currently_settings = {
-                                    'Name': 'Website 1',
-                                    'url': textinput.value,
-                                    "download_res": download_resources_enabled,
-                                    "download_cors_res": download_cors_resources_enabled,
-                                    "cors": cors_enabled,
-                                    "cors_download_res": download_cors_resources_enabled,
-                                    "cors_download_cors_res": False,
-                                    "max_cors": Max_cors,
-                                    "same_origin_deviation": same_origin_crawl_limit,
-                                    "location": ".",
-                                    "maintain_logs": True,
-                                    "show_failed_files": True,
-                                    "refetch": refetch_enabled,
-                                    "logs": []
-                                }
-                                page_num = 3
-                                task_running = website.StoppableThread(target=temp_website.download)
-                                task_running.start()
+                            temp_website = website.Website({
+                                'Name': 'Website 1',
+                                'url': textinput.value,
+                                "download_res": download_resources_enabled,
+                                "download_cors_res": download_cors_resources_enabled,
+                                "cors": cors_enabled,
+                                "cors_download_res": download_cors_resources_enabled,
+                                "cors_download_cors_res": False,
+                                "max_cors": Max_cors,
+                                "same_origin_deviation": same_origin_crawl_limit,
+                                "location": ".",
+                                "maintain_logs": True,
+                                "show_failed_files": True,
+                                "refetch": refetch_enabled,
+                                "logs": []
+                            })
+                            website_being_downloaded = temp_website
+                            websites[website_being_downloaded] = [{
+                                'Name': 'Website 1',
+                                'url': textinput.value,
+                                "download_res": download_resources_enabled,
+                                "download_cors_res": download_cors_resources_enabled,
+                                "cors": cors_enabled,
+                                "cors_download_res": download_cors_resources_enabled,
+                                "cors_download_cors_res": False,
+                                "max_cors": Max_cors,
+                                "same_origin_deviation": same_origin_crawl_limit,
+                                "location": ".",
+                                "maintain_logs": True,
+                                "show_failed_files": True,
+                                "refetch": refetch_enabled,
+                                "logs": []
+                            },[],[],None]
+                            page_num = 3
+                            websites[website_being_downloaded][3] = website.StoppableThread(target=temp_website.download)
+                            websites[website_being_downloaded][3].start()
                 
         if event.type == CANCEL_PRESSED and not page_num == 4:
             cancel_color = (255, 255, 255)     
@@ -774,11 +819,9 @@ while True:
             loading_allow = True
             display_err = False
             display_err_msg = ""
-            checking = website.StoppableThread(target=check_if_website_correct)
-            checking.start()
             pygame.time.set_timer(STARTED, 3000)
                 
-        if event.type == pygame.MOUSEWHEEL:
+        if event.type == pygame.MOUSEWHEEL and page_num == 2:
             if event.y<0 and alist[-1][0][1]>400:
                 for i in range(len(alist)):
                     alist[i][0][1] -= 50
@@ -787,20 +830,46 @@ while True:
                 for i in range(len(alist)):
                     alist[i][0][1] += 50
                     alist[i][2][4][1] += 50
+                    
+        position = pygame.mouse.get_pos()
+        if event.type == pygame.MOUSEWHEEL and page_num == 3 and (position[0]>95 and position[0]<95+810 and position[1]>225 and position[1]<225+375):
+            tempsingh = websites[website_being_downloaded][2]
+            if event.y<0 and tempsingh[-1][1][1]!=550:
+                for i in tempsingh:
+                    i[1][1] -= 30
+            if event.y>=0 and tempsingh[0][1][1]!=250:
+                for i in tempsingh:
+                    i[1][1] += 30
                 
         if event.type == STARTED and pressed and not page_num==4:
             display_err = False
             rect4.y -= 1
             valid = None
-            checking = website.StoppableThread(target=check_if_website_correct)
-            checking.start()
+            pressed = False
+            if len(websites)<3:
+                checking = website.StoppableThread(target=check_if_website_correct)
+                checking.start()
             pygame.mouse.set_cursor(nw_mouse)
         if event.type == DOWNLOADS_PRESSED and pressed_downloads and page_num == 1 and not page_num==4:
             rectangle1.y -= 5
             rectangle2.y -= 5
             pressed_downloads = False
             change_page = True
+    for i in websites.copy():
+        if i.done or i.failed and websites[i][3]:
+            websites[i][3].join()
+            if i.done:
+                with open('details.json','r') as file:
+                    tempdata = json.load(file)
+                a = tempdata['Websites']
+                a.append(websites[i][0])
+                tempdata['Websites'] = a
+                # print(tempdata)
+                with open('details.json','w') as file:
+                    json.dump(tempdata, file)
+            # if i==website_being_downloaded:
+            #     website_being_downloaded = None
+            # del websites[i]
             
-
     pygame.display.update()
     clock.tick(40)
