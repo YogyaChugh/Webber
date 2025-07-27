@@ -69,6 +69,7 @@ class Webpage:
     logs = open("webber_unkown.log",'w')
     children = []
     def __init__(self,url, website, file_type, same_origin_deviation, cors_level, prev_link, content = None, download_res = True, download_cors_res = True):
+        website.webpages_created.append(self)
         self.url = url
         self.prev_link = prev_link
         self.download_res = download_res
@@ -95,7 +96,10 @@ class Webpage:
 
     def __del__(self):
         if self.maintain_logs:
-            self.logs.close()
+            try:
+                self.logs.close()
+            except:
+                return
         
     def __eq__(self, another_webpage):
         if (self.cors==another_webpage.cors and self.cors_level>=another_webpage.cors_level and (self.same_origin_deviation>=another_webpage.same_origin_deviation) and (self.download_res==another_webpage.download_res or self.download_res) and (self.download_cors_res==another_webpage.download_cors_res or self.download_cors_res)):
@@ -224,6 +228,7 @@ class Webpage:
         if self.maintain_logs:
             self.logs.write(f"\nFILE SAVED SUCCESSFULLY | {os.path.join(file_loc, fileName)} |\n\n")
             self.logs.flush()
+        self.website.webpages_scraped[self.prev_link] = (self, False, True)
     
     def find_urls(self, content, is_html = False):
         urls = set()
@@ -260,7 +265,7 @@ class Webpage:
         if self.maintain_logs:
             self.logs.write("\n=========================\nFINDING INTERNAL URLS.....\n=========================")
             self.logs.flush()
-        final_content = content
+        final_content = str(content)
         found_urls = re.findall(pattern, final_content, re.IGNORECASE | re.VERBOSE)
         print(f"FOR: {self.url.geturl()}")
         for url in found_urls:
@@ -282,5 +287,4 @@ class Webpage:
         file_content = content.get('file_content')
         self.content = file_content
         print(f"DOWNLOAD COMPLETE | {self.url.geturl()} |")
-        self.website.webpages_scraped[self.prev_link] = (self, False, True)
         return True
