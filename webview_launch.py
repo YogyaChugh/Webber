@@ -9,6 +9,6 @@ if __name__ == "__main__":
         webview.settings['ALLOW_DOWNLOADS'] = True
         webview.settings['OPEN_EXTERNAL_LINKS_IN_BROWSER'] = False
         window = webview.create_window('MY WEBSITE',url)
-        with open(f"web_{url}.pkl","wb") as ok:
-            dill.dump([url, window],ok)
+        # with open(f"web_{url}.pkl","wb") as ok:
+        #     dill.dump([url, window],ok)
         webview.start()

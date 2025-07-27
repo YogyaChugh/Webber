@@ -5,15 +5,16 @@ import time
 import json
 import webpage, website
 import os
-import webview
 import asyncio
-import threading
-from urllib.parse import urlparse
 import subprocess
-import pickle
-import dill
+import os
+import psutil
+from concurrent.futures import ThreadPoolExecutor
+import threading
 
-total_lists = []
+executor = ThreadPoolExecutor(max_workers=2)
+
+total_lists = {}
 pygame.init()
 
 font = pygame.font.Font("assets/VarelaRound-Regular.ttf", 24)
@@ -67,6 +68,7 @@ play = pygame.image.load("assets/play.png")
 cancel = pygame.image.load("assets/cancel.png")
 settings = pygame.image.load("assets/spidieee.png")
 tick = pygame.image.load("assets/tick.png")
+eye = pygame.image.load('assets/eye.png')
 
 
 btn_img = pygame.transform.scale(btn_img, (314, 74))
@@ -90,6 +92,7 @@ tick = pygame.transform.scale(tick, (40, 40))
 tick2 = tick.copy()
 tick2 = pygame.transform.scale(tick2, (35, 35))
 settings = pygame.transform.scale(settings, (80, 80))
+eye = pygame.transform.scale(eye, (35, 35))
 
 rect = img.get_rect()
 rect2 = btn_img.get_rect()
@@ -101,17 +104,20 @@ rect3.x = 465
 rect3.y = 340+119
 screen.fill((225, 225, 225))
 
-pygame.key.set_repeat(200, 25)
+# pygame.key.set_repeat(200, 25)
 pressed = False
 STARTED = pygame.USEREVENT
 
 hover_downloads = False
 DOWNLOADS_HOVER = pygame.USEREVENT
 pressed_downloads = False
+pressed_credits = False
 DOWNLOADS_PRESSED = pygame.USEREVENT
+CREDITS_PRESSED = pygame.USEREVENT
 CANCEL_PRESSED = pygame.USEREVENT
 LOADER = pygame.USEREVENT
 STARTED_EVENT = pygame.USEREVENT
+DELETE_IT = pygame.USEREVENT
 
 surf = pygame.image.load("assets/mouse.png")
 surf = pygame.transform.scale(surf, (50,50))
@@ -149,6 +155,8 @@ page_num = 1
 
 rectangle1 = pygame.Rect(780, 20, 200, 50)
 rectangle2 = pygame.Rect(815, 30, 200, 50)
+rectangle3 = pygame.Rect(30, 600, 160, 50)
+rectangle4 = pygame.Rect(65, 610, 160, 50)
 
 rectji = pygame.Rect(10, 10, 200, 50)
 rectji2 = pygame.Rect(15, 15, 50, 40)
@@ -211,34 +219,59 @@ try:
 except EOFError:
     pass  # All frames loaded
 
+gif5 = Image.open("assets/delete.gif")
+frames5 = []
+try:
+    while True:
+        frame5 = gif5.copy().convert("RGBA")
+        mode5 = frame5.mode
+        size5 = frame5.size
+        data5 = frame5.tobytes()
+        surf5 = pygame.image.fromstring(data5, size5, mode5)
+        frames5.append(surf5)
+        gif5.seek(gif5.tell() + 1)
+except EOFError:
+    pass  # All frames loaded
+
+
+
 something_done = True
+something_other_done = True
 change_page = False
 do = True
 launch_text = True
 launch_press_allow = True
 
+processes_running = []
+
 # rect, launch text, rocket img, rotation, launched?, animation_complete?, (i[0]+700, i[1]+18,39, 39)
 alist = []
-alist2 = []
+alist_of_running = []
 
 def update_list():
-    global alist, alist2
-    with open('details.json' ,'r') as file:
+    global alist
+    with open('data/details.json' ,'r') as file:
         data = json.load(file)
     websites_temp = data['Websites']
+    # print('Websites Temp:\n\n')
+    # print(websites_temp)
+    alist = []
     for i in range(len(websites_temp)):
         if i==0:
             alist.append([[50,100,900,200], True, [rocket.copy(), 0, False, False, [753, 122, 39,39]], True, [], True, [], websites_temp[i], True])
         else:
             b = alist[i-1]
-            alist.append([[b[0][0],b[0][1]+250,b[0][2],b[0][3]], True, [rocket.copy(),0,False,False,[b[2][4][0],b[2][4][1]+250,b[2][4][2],b[2][4][3]]],True,[],True,[], websites_temp[i], True])
-    alist2 = alist.copy()
-
+            alist.append([[b[0][0],b[0][1]+250,b[0][2],b[0][3]], True, [rocket.copy(),0,False,False,[753,b[2][4][1]+250,39,39]],True,[],True,[], websites_temp[i], True])
+    # print('ALIST:\n\n')
+    # print(alist)
 
 frame_num = 0
 frame_num2 = 0
 frame_num3 = 0
 frame_num4 = 0
+frame_num5 = 0
+
+base_pos = [50,100,900,200]
 
 set_cursor_back3 = True
 canceled = False
@@ -281,7 +314,7 @@ circle_rect = pygame.draw.circle(screen, (30, 28, 34), (795, 83), 28)
 
 
 
-with open("file_types.json",'r') as file_tp:
+with open("data/file_types.json",'r') as file_tp:
         a = json.load(file_tp)
 os.environ['file_types'] = str(a['file_types_to_mime'])
     
@@ -291,7 +324,7 @@ checking = None
 
 at_last = True
 allow_options = True
-
+change_the_page = False
 
 website_being_downloaded = None #rename to current website
 completed_checking = False
@@ -329,12 +362,19 @@ currently_settings = {}
 current_logs = []
 websites = {} # currently_settings, current_logs, renderers
 
+
 cached_log_renderers = []
 some_other_thread = {}
 completed = []
 last_page = 1
+clicked = []
+downloads = font.render("Downloads", True, (0,0,0))
+credits = font.render("Credits", True, (0,0,0))
+some_text = font2.render("CRAWL & DOWNLOAD", True, (255, 191, 0))
 
 while True:
+    print("CPU:", psutil.cpu_percent())
+    print("Threads:", threading.active_count())
     events = pygame.event.get()
     screen.fill((255, 255, 255))
     screen.blit(img, rect)
@@ -355,10 +395,15 @@ while True:
         pygame.draw.rect(screen, (0, 0, 0), [780, 49, 200, 25], border_radius=12)
         pygame.draw.rect(screen, (232, 232, 232), rectangle1 , border_radius=12)
         pygame.draw.rect(screen, (30, 28, 34), rectangle1, 3, border_radius=12)
-        downloads = font.render("Downloads", True, (0,0,0))
         screen.blit(downloads, rectangle2)
+        
+        pygame.draw.rect(screen, (0, 0, 0), [30, 600, 160, 50], border_radius=12)
+        pygame.draw.rect(screen, (232, 232, 232), rectangle3 , border_radius=12)
+        pygame.draw.rect(screen, (30, 28, 34), rectangle3, 3, border_radius=12)
+        screen.blit(credits, rectangle4)
+        
+        
         # pygame.draw.rect(screen, (0, 0, 0), [455, 340, 320, 80], 8, border_radius=20)
-        some_text = font2.render("CRAWL & DOWNLOAD", True, (255, 191, 0))
         screen.blit(textinput.surface, (250,400))
         if not pressed:
             screen.blit(btn_img, rect2)
@@ -369,8 +414,9 @@ while True:
         screen.blit(spider_hanging_img, rect6)
         
         if completed_checking:
-            checking.join()
-            checking = None
+            if isinstance(checking, website.StoppableThread):
+                checking.join()
+                checking = None
         
         if display_err and display_err_msg:
             ay = font6.render(display_err_msg, True, (255,0,0))
@@ -392,28 +438,106 @@ while True:
                     something_done = False
                     rectangle1.y -= 3
                     rectangle2.y -= 3
+            elif rectangle3.collidepoint(pos):
+                pygame.mouse.set_cursor(nw_mouse2)
+                if something_other_done:
+                    something_other_done = False
+                    rectangle3.y -= 3
+                    rectangle4.y -= 3
             else:
                 if not something_done:
                     something_done = True
                     rectangle1.y += 3
                     rectangle2.y += 3
+                if not something_other_done:
+                    something_other_done = True
+                    rectangle3.y += 3
+                    rectangle4.y += 3
                 pygame.mouse.set_cursor(nw_mouse)
             if change_page:
                 change_page = False
-                #rectangle1.y -= 5
-                #rectangle2.y -= 5
+                # rectangle1.y -= 5
+                # rectangle2.y -= 5
                 pygame.mouse.set_cursor(nw_mouse)
                 pygame.display.update()
                 time.sleep(0.25)
                 update_list()
+                base_pos = [50,100,900,200]
                 page_num = 2
     elif page_num == 2:
         last_page = 2
         set_cursor_back = True
         set_cursor_back2 = True
+        #another list alist_of_running
+        maggi = 0
+        for jackychan in websites:
+            # a = [{
+            #     'Name': 'Website 1',
+            #     'url': textinput.value,
+            #     "download_res": download_resources_enabled,
+            #     "download_cors_res": download_cors_resources_enabled,
+            #     "cors": cors_enabled,
+            #     "cors_download_res": download_cors_resources_enabled,
+            #     "cors_download_cors_res": False,
+            #     "max_cors": Max_cors,
+            #     "same_origin_deviation": same_origin_crawl_limit,
+            #     "location": ".",
+            #     "maintain_logs": True,
+            #     "show_failed_files": True,
+            #     "refetch": refetch_enabled,
+            #     "logs": [],
+            #     "hash": temp_website.hash,
+            #     "completed": False,
+            #     'file_location': os.path.join(temp_website.index_file_location,'index.html')
+            # },[],[],temp_website, None, False, False, False]
+            if jackychan not in completed and not websites[jackychan][7]:
+                temporary_location = [base_pos[0],base_pos[1]+(250*maggi),base_pos[2],base_pos[3]]
+                pygame.draw.rect(screen, (26, 26, 26), temporary_location, border_radius=12) #Black box
+                
+                pygame.draw.rect(screen, (0, 0, 0), temporary_location, 8, border_radius=12) #Black box border
+                screen.blit(logo3, (temporary_location[0]+840,temporary_location[1]+140,96,96)) # Spider logo on right
+                
+                a = font3.render(websites[jackychan][0]['Name'],True,(255, 255, 255)) #NAME
+                screen.blit(a, (temporary_location[0]+33, temporary_location[1]+26,temporary_location[2],temporary_location[3]))
+
+                pygame.draw.line(screen, (0,0,0), (temporary_location[0]+30, temporary_location[1]+70), (temporary_location[0]+temporary_location[2]-30, temporary_location[1]+70),6) #LINE SEPARATION
+
+                b = font.render(websites[jackychan][0]['url'],True,(255, 255, 255)) #URL
+                screen.blit(b, (temporary_location[0]+33, temporary_location[1]+85,temporary_location[2],temporary_location[3]))
+
+                pygame.draw.rect(screen, (255, 215, 0), (temporary_location[0]+30,temporary_location[1]+135, 180, 50), border_radius=12)
+                pygame.draw.rect(screen, (0,0,0), (temporary_location[0]+30,temporary_location[1]+135, 180, 50),4, border_radius=12)
+                c = font3.render("!   INFO", True, (0,0,0))
+                screen.blit(c, (temporary_location[0]+75,temporary_location[1]+142, 200, 50))
+                
+                
+                pygame.draw.rect(screen, (0, 0, 255), (temporary_location[0]+220,temporary_location[1]+135, 50, 50), border_radius=12)
+                pygame.draw.rect(screen, (0,0,0), (temporary_location[0]+220,temporary_location[1]+135, 50, 50),4, border_radius=12)
+                screen.blit(eye, [temporary_location[0]+220+7, temporary_location[1]+135+8])
+                
+                # Imp buttons
+                # pygame.draw.rect(screen, (255, 215, 0), (temporary_location[0]+610,temporary_location[1]+14, 50, 50), border_radius=12)
+                # pygame.draw.rect(screen, (0,0,0), (temporary_location[0]+610,temporary_location[1]+14, 50, 50),4, border_radius=12)
+                # if websites[jackychan][5]:
+                #     screen.blit(play, [temporary_location[0]+610+7, temporary_location[1]+14+8])
+                # else:
+                #     screen.blit(pause, [temporary_location[0]+610+7, temporary_location[1]+14+8])
+                pygame.draw.rect(screen, (210, 4, 45), (temporary_location[0]+685,temporary_location[1]+14, 180, 50), border_radius=12)
+                pygame.draw.rect(screen, (0,0,0), (temporary_location[0]+685,temporary_location[1]+14, 180, 50),4, border_radius=12)
+                b = font3.render("Cancel",True,cancel_color) #NAME
+                screen.blit(b, (temporary_location[0]+685+38,temporary_location[1]+14+7, 180, 50))
+                
+                # Mouse change for info, play-pause and cancel
+                if (pos[0]>temporary_location[0]+30 and pos[0]<temporary_location[0]+30+180 and pos[1]>temporary_location[1]+135 and pos[1]<temporary_location[1]+185) or (pos[0]>temporary_location[0]+685 and pos[0]<temporary_location[0]+685+180 and pos[1]>temporary_location[1]+14 and pos[1]<temporary_location[1]+14+50) or (pos[0]>temporary_location[0]+220 and pos[0]<temporary_location[0]+220+50 and pos[1]>temporary_location[1]+135 and pos[1]<temporary_location[1]+135+50):
+                    set_cursor_back = False
+                    pygame.mouse.set_cursor(nw_mouse2)
+                
+                maggi += 1
         for j in alist:
-            i = j[0]
-            
+            i = j[0].copy()
+            i[1] += 250*(maggi)
+            rocketloc = j[2][4].copy()
+            rocketloc[1] += 250*(maggi)
             #BUTTONS
             # temprect_launch.add(pygame.Rect(i[0]+685,i[1]+14, 180, 45))
             if j[8]:
@@ -422,7 +546,7 @@ while True:
                 if j[1]:
                     c = font3.render("Launch", True, (0,0,0))
                     screen.blit(c, (i[0]+750,i[1]+21, 200, 50))
-                screen.blit(j[2][0], j[2][4])
+                screen.blit(j[2][0], rocketloc)
             else:
                 pygame.draw.rect(screen, (210, 4, 45), (i[0]+685,i[1]+14, 180, 50), border_radius=12)
                 pygame.draw.rect(screen, (0,0,0), (i[0]+685,i[1]+14, 180, 50),4, border_radius=12)
@@ -459,17 +583,18 @@ while True:
                 screen.blit(c, (i[0]+75,i[1]+142, 200, 50))
             # screen.blit(exclamation, (i[0]+60,i[1]+143, 200, 50))
             
-            
-            pygame.draw.rect(screen, (255, 0, 0), (i[0]+230,i[1]+135, 180, 50), border_radius=12)
-            pygame.draw.rect(screen, (0,0,0), (i[0]+230,i[1]+135, 180, 50),4, border_radius=12)
-            if j[5]:
-                c = font3.render("DELETE", True, (0,0,0))
-                screen.blit(c, (i[0]+290,i[1]+142, 200, 50))
-            screen.blit(delete, (i[0]+250,i[1]+141, 200, 50))
+            if j[8]:
+                pygame.draw.rect(screen, (255, 47, 47), (i[0]+230,i[1]+135, 180, 50), border_radius=12)
+                pygame.draw.rect(screen, (0,0,0), (i[0]+230,i[1]+135, 180, 50),4, border_radius=12)
+                if j[5]:
+                    c = font3.render("DELETE", True, (0,0,0))
+                    screen.blit(c, (i[0]+290,i[1]+142, 200, 50))
+                screen.blit(delete, (i[0]+250,i[1]+141, 200, 50))
             
             
             if not page_num==4:
                 # Check for launch
+                change = False
                 if pos[0]>i[0]+685 and pos[0]<i[0]+865 and pos[1]>i[1]+14 and pos[1]<i[1]+64:
                     set_cursor_back = False
                     if j[8]:
@@ -485,7 +610,7 @@ while True:
                     change = False
 
                 # Check for Delete & Info
-                if (pos[0]>i[0]+230 and pos[0]<i[0]+410 and pos[1]>i[1]+135 and pos[1]<i[1]+185) or (pos[0]>i[0]+30 and pos[0]<i[0]+210 and pos[1]>i[1]+135 and pos[1]<i[1]+185):
+                if ((pos[0]>i[0]+230 and pos[0]<i[0]+410 and pos[1]>i[1]+135 and pos[1]<i[1]+185) and j[8]) or (pos[0]>i[0]+30 and pos[0]<i[0]+210 and pos[1]>i[1]+135 and pos[1]<i[1]+185):
                     set_cursor_back = False
                     pygame.mouse.set_cursor(nw_mouse2)
 
@@ -512,10 +637,14 @@ while True:
                     if j[2][2] and not j[2][3]:
                         j[2][1] = 270
                         j[2][0] = pygame.transform.rotate(rocket, j[2][1])
-                        j[2][4][0] += 20
-                        if j[2][4][0]>i[0]+180+665:
+                        rocketloc[0] += 20
+                        if rocketloc[0]>i[0]+180+665:
                             j[2][3] = True
                     
+        if alist == [] and websites == {}:
+            ggcam = font4.render("Nothing to show here !", True, (255, 255, 255))
+            screen.blit(ggcam, (300, 300))
+        
         
         pygame.draw.rect(screen, (232, 232, 232), rectji , border_radius=12)
         back = font.render("Go Back", True, (0,0,0))
@@ -544,7 +673,6 @@ while True:
         if set_cursor_back and set_cursor_back2:
             pygame.mouse.set_cursor(nw_mouse)
     elif page_num==3:
-        last_page = 3
         pygame.draw.rect(screen, (234, 111, 0), [75, 48, 850, 570], border_radius=20)
         pygame.draw.rect(screen, (44, 42, 49), [220-125, 285-60, 560+250, 280+70+25], border_radius=20)
         if website_being_downloaded:
@@ -801,23 +929,50 @@ while True:
             pygame.mouse.set_cursor(nw_mouse)
 
 
+    elif page_num ==  5:
+        screen.blit(frames5[frame_num5], (420, 256))
+        pygame.display.update()
+        frame_num5 = (frame_num5 + 1) % len(frames5)
+
+
     for event in events:
         if event.type == pygame.QUIT:
             exit()
         if event.type == pygame.MOUSEBUTTONDOWN:
+            nope = False
+            for giraffe in events:
+                if giraffe.type == pygame.MOUSEWHEEL:
+                    nope = True
+                    break
+            if nope:
+                continue
             if not page_num==4:
                 if rect2.collidepoint(event.pos) and page_num == 1 and not pressed:
                     pressed = True
                     rect4.y += 1
-                    loading_allow = True
-                    display_err = False
-                    display_err_msg = ""
-                    pygame.time.set_timer(STARTED, 3000)
+                    counterman = 0
+                    for pasta in websites:
+                        if not websites[pasta][5] and not websites[pasta][7]:
+                            counterman += 1
+                    print("Websites Running: ",counterman)
+                    if counterman>=1:
+                        display_err = True
+                        display_err_msg = "Max 1 at a time !"
+                    else:
+                        loading_allow = True
+                        display_err = False
+                        display_err_msg = ""
+                        pygame.time.set_timer(STARTED, 1000)
                 if rectangle1.collidepoint(event.pos) and page_num == 1:
                     pressed_downloads = True
                     rectangle1.y += 5
                     rectangle2.y += 5
                     pygame.time.set_timer(DOWNLOADS_PRESSED, 200)
+                if rectangle3.collidepoint(event.pos) and page_num == 1:
+                    pressed_credits = True
+                    rectangle3.y += 5
+                    rectangle4.y += 5
+                    pygame.time.set_timer(CREDITS_PRESSED, 200)
                 if rectji.collidepoint(event.pos) and page_num == 2:
                     time.sleep(0.25)
                     page_num = 1
@@ -829,26 +984,60 @@ while True:
                             doit = False
                             break
                     if doit:
+                        maggiji = 0
+                        for people in websites:
+                            if people not in completed:
+                                maggiji += 1
+                        # print(alist)
                         for j in alist:
-                            i = j[0]
+                            i = j[0].copy()
+                            i[1] += (250*(maggiji))
                             if event.pos[0]>i[0]+685 and event.pos[0]<i[0]+865 and event.pos[1]>i[1]+14 and event.pos[1]<i[1]+64:
                                 if j[8]:
                                     j[8] = False
                                     j[2][2] = True
-                                    bb = urlparse(j[-2]['url'])
-                                    if str(bb.hostname):
-                                        bb2 = os.path.join(j[-2]['location'],str(bb.hostname),'index.html')
-                                    else:
-                                        bb2 = os.path.join(j[-2]['location'],'index.html')
-                                    bb2 = bb2.replace("\\",'_')
-                                    with open(f'web_{bb2}.pkl', 'w') as fp:
-                                        pass
-                                    total_lists.append([bb2,j[-2]['hash']])
-                                    subprocess.Popen(['python','webview_launch.py',bb2])
-                                    pygame.time.set_timer(STARTED_EVENT,5000)
+                                    # with open(f'web_{j[-2]['file_location']}.pkl', 'w') as fp:
+                                    #     pass
+                                    dothat = True
+                                    for d in total_lists:
+                                        if d==j[-2]['hash'] and total_lists[d]!=None:
+                                            dothat = False
+                                            break
+                                    if dothat:
+                                        print('created')
+                                        process = subprocess.Popen(['python','webview_launch.py',j[-2]['file_location']])
+                                        total_lists[j[-2]['hash']] = ([j[-2]['file_location'],process])
+                                        clicked.append(j[-2]['hash'])
+                                    # pygame.time.set_timer(STARTED_EVENT,5000)
                                 else:
-                                    webviews_opened[j[-2]['hash']].destroy()
-                                    j = alist2[alist.index(j)]
+                                    apboi = total_lists.get(j[-2]['hash'])
+                                    # os.kill(apboi[2].pid, signal.SIGTERM)
+                                    if apboi:
+                                        print('came')
+                                        # print(apboi)
+                                        psutil.Process(apboi[1].pid).terminate()
+                                        j[0][0] = 50
+                                        j[0][2] = 900
+                                        j[0][3] = 200
+                                        j[1] = True
+                                        j[2][0] = rocket.copy()
+                                        j[2][1] = 0
+                                        j[2][2] = False
+                                        j[2][3] = False
+                                        j[2][4][0] = 753
+                                        j[2][4][2] = 39
+                                        j[2][4][3] = 39
+                                        j[3] = True
+                                        j[4] = []
+                                        j[5] = True
+                                        j[6] = []
+                                        j[8] = True
+                                        del total_lists[j[-2]['hash']]
+                                        print("deleted !")
+                                        # print(total_lists)
+                                        clicked.remove(j[-2]['hash'])
+                                        apboi = None
+                                break
                             if (event.pos[0]>i[0]+30 and event.pos[0]<i[0]+210 and event.pos[1]>i[1]+135 and event.pos[1]<i[1]+185):
                                 allow_options = False
                                 download_resources_enabled = j[-2]['download_res']
@@ -858,6 +1047,28 @@ while True:
                                 resources_for_cors = j[-2]['cors_download_res']
                                 same_origin_crawl_limit = j[-2]['same_origin_deviation']
                                 page_num = 4
+                                break
+                            
+                            if (j[8] and event.pos[0]>i[0]+230 and event.pos[0]<i[0]+410 and event.pos[1]>i[1]+135 and event.pos[1]<i[1]+185):
+                                puppy = j[7]
+                                if os.path.isdir(puppy['file_location']):
+                                    try:
+                                        shutil.rmtree(puppy['file_location'])
+                                    except:
+                                        pass
+                                with open('data/details.json','r') as mumbai:
+                                    ggboi = json.load(mumbai)
+                                websitedata = ggboi['Websites']
+                                for i in websitedata.copy():
+                                    if i['hash']==puppy['hash']:
+                                        websitedata.remove(i)
+                                pp = {'Websites':websitedata}
+                                with open('data/details.json','w') as goa:
+                                    json.dump(pp, goa)
+                                update_list()
+                                page_num = 5
+                                change_the_page = True
+                                pygame.time.set_timer(DELETE_IT,3000)
 
                 if page_num == 3 and rect_play_pause.collidepoint(event.pos):
                     if websites[website_being_downloaded][5] and not websites[website_being_downloaded][3].canceled:
@@ -868,42 +1079,8 @@ while True:
                         websites[website_being_downloaded][3].failed = True
                         if not websites[website_being_downloaded][5]:
                             result = some_thread_result.get(website_being_downloaded)
-                            temp_website = website.Website({
-                                'Name': 'Website 1',
-                                'url': textinput.value,
-                                "download_res": download_resources_enabled,
-                                "download_cors_res": download_cors_resources_enabled,
-                                "cors": cors_enabled,
-                                "cors_download_res": download_cors_resources_enabled,
-                                "cors_download_cors_res": False,
-                                "max_cors": Max_cors,
-                                "same_origin_deviation": same_origin_crawl_limit,
-                                "location": ".",
-                                "maintain_logs": True,
-                                "show_failed_files": True,
-                                "refetch": refetch_enabled,
-                                "logs": []
-                            })
-                            website_being_downloaded = temp_website.hash
-                            websites[website_being_downloaded] = [{
-                                'Name': 'Website 1',
-                                'url': textinput.value,
-                                "download_res": download_resources_enabled,
-                                "download_cors_res": download_cors_resources_enabled,
-                                "cors": cors_enabled,
-                                "cors_download_res": download_cors_resources_enabled,
-                                "cors_download_cors_res": False,
-                                "max_cors": Max_cors,
-                                "same_origin_deviation": same_origin_crawl_limit,
-                                "location": ".",
-                                "maintain_logs": True,
-                                "show_failed_files": True,
-                                "refetch": refetch_enabled,
-                                "logs": [],
-                                "hash": temp_website.hash,
-                                "completed": False
-                            },[],[],temp_website, None, False, False, False]
-                            page_num = 3
+                            temp_website = website.Website(websites[website_being_downloaded][0])
+                            temp_website.hash = website_being_downloaded
                             if result:
                                 temp_website.webpages_scraped = result[0]
                                 temp_website.resources_downloaded = result[1]
@@ -927,9 +1104,65 @@ while True:
 
                 if page_num == 3 and circle_rect.collidepoint(event.pos):
                     website_being_downloaded = None
-                    page_num = 1
+                    page_num = last_page
                     
                     
+                if page_num == 2:
+                    dosa_num = 0
+                    for dosa in websites:
+                        if dosa not in completed:
+                            dosa_location = [base_pos[0],base_pos[1]+(250*dosa_num),base_pos[2],base_pos[3]]
+                            play_pause_loc = [dosa_location[0]+610+7, dosa_location[1]+14+8, 50, 50]
+                            info_loc = [dosa_location[0]+30,dosa_location[1]+135, 180, 50]
+                            if (event.pos[0]>info_loc[0] and event.pos[0]<info_loc[0]+180 and event.pos[1]>info_loc[1] and event.pos[1]<info_loc[1]+50):
+                                allow_options = False
+                                download_resources_enabled = websites[dosa][0]['download_res']
+                                download_cors_resources_enabled = websites[dosa][0]['download_cors_res']
+                                cors_enabled = websites[dosa][0]['cors']
+                                Max_cors = websites[dosa][0]['max_cors']
+                                resources_for_cors = websites[dosa][0]['cors_download_res']
+                                same_origin_crawl_limit = websites[dosa][0]['same_origin_deviation']
+                                page_num = 4
+                                break
+                            
+                            # if event.pos[0]>play_pause_loc[0] and event.pos[0] <play_pause_loc[0]+play_pause_loc[2] and event.pos[1]>play_pause_loc[1] and event.pos[1]<play_pause_loc[1]+play_pause_loc[3]:
+                            #     if websites[dosa][5] and not websites[dosa][3].canceled:
+                            #         pass
+                            #     else:
+                            #         websites[dosa][5] = not websites[dosa][5]
+                            #         websites[dosa][6] = True
+                            #         websites[dosa][3].failed = True
+                            #         if not websites[dosa][5]:
+                            #             result = some_thread_result.get(dosa)
+                            #             temp_website = website.Website(websites[dosa][0])
+                            #             temp_website.hash = dosa
+                            #             if result:
+                            #                 temp_website.webpages_scraped = result[0]
+                            #                 temp_website.resources_downloaded = result[1]
+                            #             websites[dosa][4] = website.StoppableThread(target=temp_website.download)
+                            #             websites[dosa][4].start()
+                            #         else:
+                            #             t = website.StoppableThread(target=websites[dosa][3].cancel)
+                            #             t.start()
+                            #             some_thread[dosa] = t
+                            #         break
+                            cancel_loc = [dosa_location[0]+685,dosa_location[1]+14, 180, 50]
+                            if event.pos[0]>cancel_loc[0] and event.pos[0]<cancel_loc[0]+cancel_loc[2] and event.pos[1]>cancel_loc[1] and event.pos[1]<cancel_loc[1]+cancel_loc[3]:
+                                if not websites[dosa][6] and not websites[dosa][7]:
+                                    websites[dosa][7] = True
+                                    websites[dosa][5] = False
+                                    websites[dosa][3].failed = True
+                                    cancel_color = (0,0,0)
+                                    pygame.time.set_timer(CANCEL_PRESSED, 100)
+                                    t = website.StoppableThread(target=websites[dosa][3].cancel,args=([True]))
+                                    t.start()
+                                    some_thread[dosa] = t  
+                                    break
+                            if event.pos[0]>dosa_location[0]+220 and event.pos[0]<dosa_location[0]+220+50 and event.pos[1]>dosa_location[1]+135 and event.pos[1]<dosa_location[1]+135+50:
+                                website_being_downloaded = dosa
+                                page_num = 3
+                                break
+
             else:
                 if circle_rect.collidepoint(event.pos):
                     page_num = last_page
@@ -992,11 +1225,13 @@ while True:
                                     "refetch": refetch_enabled,
                                     "logs": [],
                                     "hash": temp_website.hash,
-                                    "completed": False
+                                    "completed": False,
+                                    'file_location': os.path.join(temp_website.index_file_location,'index.html')
                                 },[],[],temp_website, None, False, False, False]
                                 page_num = 3
                                 websites[website_being_downloaded][4] = website.StoppableThread(target=temp_website.download)
                                 websites[website_being_downloaded][4].start()
+                                print(f"Download called for {textinput.value}")
                 
         if event.type == CANCEL_PRESSED and not page_num == 4:
             cancel_color = (255, 255, 255)     
@@ -1007,21 +1242,32 @@ while True:
             loading_allow = True
             display_err = False
             display_err_msg = ""
-            pygame.time.set_timer(STARTED, 3000)
+            counterman = 0
+            for pasta in websites:
+                if not websites[pasta][5] and not websites[pasta][7]:
+                    counterman += 1
+            print("Websites Running: ",counterman)
+            if counterman>=1:
+                display_err = True
+                display_err_msg = "Max 1 at a time !"
+            else:
+                loading_allow = True
+                display_err = False
+                display_err_msg = ""
+                pygame.time.set_timer(STARTED, 1000)
                 
         if event.type == pygame.MOUSEWHEEL and page_num == 2:
-            if event.y<0 and alist[-1][0][1]>400:
-                for i in range(len(alist)):
-                    alist[i][0][1] -= 50
-                    alist[i][2][4][1] -= 50
-                    alist2[i][0][1] -= 50
-                    alist2[i][2][4][1] -= 50
-            elif event.y>=0 and alist[0][0][1]<100:
-                for i in range(len(alist)):
-                    alist[i][0][1] += 50
-                    alist[i][2][4][1] += 50
-                    alist2[i][0][1] += 50
-                    alist2[i][2][4][1] += 50
+            if len(alist)!=0:
+                if event.y<0 and alist[-1][0][1]>400:
+                    for i in range(len(alist)):
+                        alist[i][0][1] -= 50
+                        alist[i][2][4][1] -= 50
+                    base_pos[1] -= 50
+                elif event.y>=0 and alist[0][0][1]<100:
+                    for i in range(len(alist)):
+                        alist[i][0][1] += 50
+                        alist[i][2][4][1] += 50
+                    base_pos[1] += 50
                     
         position = pygame.mouse.get_pos()
         if event.type == pygame.MOUSEWHEEL and page_num == 3 and (position[0]>95 and position[0]<95+810 and position[1]>225 and position[1]<225+375):
@@ -1038,7 +1284,11 @@ while True:
             rect4.y -= 1
             valid = None
             pressed = False
-            if len(websites)<3:
+            counterman = 0
+            for pasta in websites:
+                if not websites[pasta][5] and not websites[pasta][7]:
+                    counterman += 1
+            if counterman<1:
                 allow_options = True
                 download_resources_enabled = True
                 download_cors_resources_enabled = False
@@ -1056,15 +1306,27 @@ while True:
             rectangle2.y -= 5
             pressed_downloads = False
             change_page = True
+        if event.type == CREDITS_PRESSED and pressed_credits and page_num == 1 and not page_num ==4:
+            rectangle3.y -=5
+            rectangle4.y -=5
+            pressed_credits = False
+            
+            
+        if event.type == DELETE_IT:
+            if change_the_page:
+                page_num = last_page
+                change_the_page = False
             
         if event.type == STARTED_EVENT:
-            if total_lists!=[]:
-                a = total_lists[0]
-                with open(f'web_{a[0]}.pkl','rb') as ff:
-                    obj = dill.load(ff)
-                print(obj)
-                if obj[0] == a[0]:
-                    webviews_opened[a[1]] = obj[1]
+            pass
+            # if total_lists!=[]:
+            #     a = total_lists[0]
+            #     with open(f'web_{a[0]}.pkl','rb') as ff:
+            #         obj = dill.load(ff)
+            #     print(obj)
+            #     if obj[0] == a[0]:
+            #         webviews_opened[a[1]] = obj[1]
+            #     total_lists = total_lists[1:]
             
     for i in websites.copy():
         if i in completed:
@@ -1073,26 +1335,25 @@ while True:
             some_thread[i].join()
             sabji = some_thread[i].get_result()
             if websites[i][7]:
-                t = website.StoppableThread(target=websites[website_being_downloaded][3].delete)
+                t = website.StoppableThread(target=websites[i][3].delete)
                 t.start()
-                some_other_thread[website_being_downloaded] = t
+                some_other_thread[i] = t
             else:
                 some_thread_result[i] = sabji
                 websites[i][6] = False
         if websites[i][3].deleted:
             some_other_thread[i].join()
-        if websites[i][3].done and websites[i][4]:
+        if websites[i][3].completed and websites[i][4] and not websites[i][3].deleted and not websites[i][5] and not websites[i][7]:
             websites[i][4].join()
-            if websites[i][3].done and not websites[i][7]:
-                websites[i][0]['completed'] = True
-                with open('details.json','r') as file:
-                    tempdata = json.load(file)
-                a = tempdata['Websites']
-                a.append(websites[i][0])
-                tempdata['Websites'] = a
-                # print(tempdata)
-                with open('details.json','w') as file:
-                    json.dump(tempdata, file)
+            websites[i][0]['completed'] = True
+            with open('data/details.json','r') as file:
+                tempdata = json.load(file)
+            a = tempdata['Websites']
+            a.append(websites[i][0])
+            tempdata['Websites'] = a
+            # print(tempdata)
+            with open('data/details.json','w') as file:
+                json.dump(tempdata, file)
             websites[i][3].done = True
             if i==website_being_downloaded:
                 if not websites[i][7] and websites[i][3].failed:
@@ -1104,7 +1365,33 @@ while True:
                         r[1][1] -= 30
             completed.append(i)
             print(i)
+            update_list()
             # del websites[i]
             
+    for pizza in total_lists.copy():
+        bhai = total_lists[pizza][1].poll()
+        if bhai is not None:
+            for pja in alist:
+                if pja[7]['hash']==pizza:
+                    pja[0][0] = 50
+                    pja[0][2] = 900
+                    pja[0][3] = 200
+                    pja[1] = True
+                    pja[2][0] = rocket.copy()
+                    pja[2][1] = 0
+                    pja[2][2] = False
+                    pja[2][3] = False
+                    pja[2][4][0] = 753
+                    pja[2][4][2] = 39
+                    pja[2][4][3] = 39
+                    pja[3] = True
+                    pja[4] = []
+                    pja[5] = True
+                    pja[6] = []
+                    pja[8] = True
+                    del total_lists[pja[-2]['hash']]
+                    clicked.remove(pja[-2]['hash'])
+                    break
+            
     pygame.display.update()
-    clock.tick(40)
+    clock.tick(60)

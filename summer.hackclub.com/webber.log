@@ -1,0 +1,16 @@
+Scrape Started!
+		WEBSITE | https://summer.hackclub.com |
+				================================
+				FAILED SCRAPING WEBSITE FOR https://summer.hackclub.com
+				================================
+
+
+Download Failed | https://summer.hackclub.com |
+
+Error: Traceback (most recent call last):
+  File "C:\Users\Lenovo\OneDrive\Desktop\Webber\website.py", line 215, in download_webpage
+    t = self.executor.submit(self.check_and_call, web_page, url)
+  File "C:\Users\Lenovo\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 171, in submit
+    raise RuntimeError('cannot schedule new futures after shutdown')
+RuntimeError: cannot schedule new futures after shutdown
+Logger for https://summer.hackclub.com closed !

@@ -21,7 +21,7 @@ def download_resource_safe(url, max=2):
                 # Try reading all content
                 return response.read()
             except http.client.IncompleteRead as e:
-                print(f"[WARN] IncompleteRead at {url}, accepting partial data")
+                # print(f"[WARN] IncompleteRead at {url}, accepting partial data")
                 return e.partial  #  Accept partial chunked data
             except urllib.request.HTTPError as ok:
                 if max>=0:
@@ -31,10 +31,10 @@ def download_resource_safe(url, max=2):
                 else:
                     raise exceptions.FileDownloadError(url)
             except http.client.InvalidURL as e:
-                print(f"[WARN] InvalidURL: {url}")
+                # print(f"[WARN] InvalidURL: {url}")
                 raise exceptions.FileDownloadError(url)
             except Exception as g:
-                print("New Error: ",g)
+                # print("New Error: ",g)
                 raise g
     except Exception as e:
         # print(f"[ERROR] Failed to download {url}: {e}")
@@ -66,7 +66,7 @@ class Webpage:
     main_files = set() # Contains .html, .css and .js files !
     res_files = set() # Other files !
     maintain_logs = True #temp
-    logs = open("webber_unkown.log",'w')
+    logs = open("webber_unknown.log",'w')
     children = []
     def __init__(self,url, website, file_type, same_origin_deviation, cors_level, prev_link, content = None, download_res = True, download_cors_res = True):
         website.webpages_created.append(self)
@@ -188,7 +188,9 @@ class Webpage:
         return (tempy.replace("\\","/"),fileName)
     
     def save_file(self, file_loc, fileName, file_content, file_type):
-        # print(f"saving {os.path.join(file_loc, fileName)}")     
+        # print(f"saving {os.path.join(file_loc, fileName)}")
+        # if file_type=='text/html':
+        #     print('Content: ',file_content)     
         try:
             # print(file_loc)
             os.makedirs(file_loc, exist_ok = True)
@@ -267,12 +269,12 @@ class Webpage:
             self.logs.flush()
         final_content = str(content)
         found_urls = re.findall(pattern, final_content, re.IGNORECASE | re.VERBOSE)
-        print(f"FOR: {self.url.geturl()}")
+        # print(f"FOR: {self.url.geturl()}")
         for url in found_urls:
             if url[1].strip() in ["","/",".","'","\"","''","\"\""]:
                 continue
             urls.add(url)
-            print(url)
+            # print(url)
             yield url
 
         if self.maintain_logs:
@@ -286,5 +288,5 @@ class Webpage:
         self.file_type = content.get('file_type')
         file_content = content.get('file_content')
         self.content = file_content
-        print(f"DOWNLOAD COMPLETE | {self.url.geturl()} |")
+        # print(f"DOWNLOAD COMPLETE | {self.url.geturl()} |")
         return True
