@@ -386,22 +386,44 @@ def read_logs(hash):
     log2 = log.split("$@")
     while ('0' not in log2 and '1' not in log2) and not websites[hash][5] and not websites[hash][7]:
         for i in log2:
-            print(i)
+            # print(i)
             if i.strip()!="":
+                websites[hash][9] = True
                 websites[hash][1].append(i)
                 # print(i)
                 ap = i.split("|")
                 if ap[0].startswith("Download Success"):
                     some_thread_result[hash][1][ap[1]] = (None, False, True)
+
+                t = i[:55]
+                if len(t)!=len(i):
+                    t+="..."
+                if i.startswith("Downloading Webpage"):
+                    obj = font.render(t,True, (255,255,255))
+                elif i.startswith("Download Success") or i.startswith("Resource Download Success"):
+                    obj = font.render(t,True, (0,255,0))
+                elif i.startswith("Download Failed") or i.startswith("Resource Download Failed"):
+                    obj = font.render(t, True, (255,0,0))
+                else:
+                    obj = font.render(t, True,(255,255,255))
+                if len(websites[hash][2])==0:
+                    websites[hash][2].append([obj,[120, 450]])
+                else:
+                    websites[hash][2].append([obj, [120, websites[hash][2][-1][1][1]+30]])
+                if at_last:
+                    for i in websites[hash][2]:
+                        i[1][1] -= 30
+                
+                
         log = websites[hash][4].stdout.read1().decode('utf-8')
         log2 = log.split("$@")
         time.sleep(1)
     else:
         if not websites[hash][5] and not websites[hash][7]:
             for i in log2:
-                print(i)
+                # print(i)
                 if i.strip()=="1":
-                    print('success')
+                    # print('success')
                     websites[hash][3] = 1
                     websites[hash][0]['completed'] = True
                     completed.append(hash)
@@ -414,14 +436,14 @@ def read_logs(hash):
                         if pk['hash']==hash:
                             websing[indexji] = websites[hash][0]
                             should_i_do_it = False
-                            print(f'reset bro with {websites[hash][0]}')
+                            # print(f'reset bro with {websites[hash][0]}')
                             break
                         indexji += 1
                     if should_i_do_it:
                         websing.append(websites[hash][0])
                     goen['Websites'] = websing
                     with open('data/details.json','w') as pasta:
-                        print(f"written with {goen}")
+                        # print(f"written with {goen}")
                         json.dump(goen, pasta)
                     website_being_downloaded = None
                     websites_currently_in_process -= 1
@@ -461,13 +483,31 @@ def read_logs(hash):
                         page_three()
                     break
                 elif i.strip()!="":
+                    websites[hash][9] = True
                     websites[hash][1].append(i)
                     # print(i)  
                     ap1 = i.split("|")
                     if ap1[0].startswith("Download Success"):
                         some_thread_result[hash][1][ap1[1]] = (None, False, True)
-                
-                
+                    t = i[:55]
+                    if len(t)!=len(i):
+                        t+="..."
+                    if i.startswith("Downloading Webpage"):
+                        obj = font.render(t,True, (255,255,255))
+                    elif i.startswith("Download Success") or i.startswith("Resource Download Success"):
+                        obj = font.render(t,True, (0,255,0))
+                    elif i.startswith("Download Failed") or i.startswith("Resource Download Failed"):
+                        obj = font.render(t, True, (255,0,0))
+                    else:
+                        obj = font.render(t, True,(255,255,255))
+                    if len(websites[hash][2])==0:
+                        websites[hash][2].append([obj,[120, 450]])
+                    else:
+                        websites[hash][2].append([obj, [120, websites[hash][2][-1][1][1]+30]])
+                    if at_last:
+                        for i in websites[hash][2]:
+                            i[1][1] -= 30
+
 info_rects = []
 delete_rects = []
 launch_rects = []
@@ -475,7 +515,7 @@ launch_rects = []
                 
 def update_list(main=False):
     global websites_currently_in_process, alist2, alist
-    print('updated')
+    # print('updated')
     global alist
     with open('data/details.json' ,'r') as file:
         data = json.load(file)
@@ -488,23 +528,23 @@ def update_list(main=False):
         for i in range(len(websites_temp)):
             if not websites_temp[i]['completed']:
                 current = websites_temp[i]
-                websites[current['hash']] = [current, [], [], 0, None, True, False, False, None]
+                websites[current['hash']] = [current, [], [], 0, None, True, False, False, None, False]
                 websites_currently_in_process += 1
     numji = 0  
     for i in range(len(websites_temp)):
-        print('num: ',numji)
+        # print('num: ',numji)
         if websites_temp[i]['completed']:
-            print("added: ",numji)
+            # print("added: ",numji)
             if j==0:
                 alist.append([[50,100+(250*websites_currently_in_process),900,200], True, [rocket.copy(), 0, False, False, [753, 122+(250*websites_currently_in_process), 39,39]], True, [], True, [], websites_temp[i], True])
             else:
-                print(i)
+                # print(i)
                 b = alist[j-1]
                 alist.append([[b[0][0],b[0][1]+250,b[0][2],b[0][3]], True, [rocket.copy(),0,False,False,[753,b[2][4][1]+250,39,39]],True,[],True,[], websites_temp[i], True])
         j+=1
         numji += 1
     alist2 = alist.copy()
-    print(alist)
+    # print(alist)
     if alist == [] and websites_currently_in_process==0 and page_num==2:
         ggcam = font4.render("Nothing to show here !", True, (255, 255, 255))
         screen.blit(ggcam, (300, 300))
@@ -514,7 +554,7 @@ update_list(True)
 
 
 def run_process_man(url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, resources, webpages):
-    process_ji = subprocess.Popen(['python', 'website.py', url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, resources, webpages],stdout=subprocess.PIPE)
+    process_ji = subprocess.Popen(['python', 'src/website.py', url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, resources, webpages],stdout=subprocess.PIPE)
     websites[eval(hash)][4] = process_ji
     websites[eval(hash)][8] = threading.Thread(target=read_logs,args=(eval(hash),),daemon=True)
     websites[eval(hash)][8].start()
@@ -619,7 +659,7 @@ def page_two():
     # print(alist)
     for j in alist:
         i = j[0]
-        print(i)
+        # print(i)
         rocketloc = j[2][4]
         #BUTTONS
         # temprect_launch.add(pygame.Rect(i[0]+685,i[1]+14, 180, 45))
@@ -1203,7 +1243,7 @@ while True:
                                         dothat = False
                                         break
                                 if dothat:
-                                    process = subprocess.Popen(['python','webview_launch.py',j[-2]['file_location']])
+                                    process = subprocess.Popen(['python','src/webview_launch.py',"../" + j[-2]['file_location']])
                                     total_lists[j[-2]['hash']] = ([j[-2]['file_location'],process])
                                     clicked.append(j[-2]['hash'])
                                     pygame.draw.rect(screen, (211, 214, 219), (i[0]+685,i[1]+14, 180, 50), border_radius=12)
@@ -1213,8 +1253,9 @@ while True:
                                         screen.blit(c, (i[0]+750,i[1]+21, 200, 50))
                                     screen.blit(j[2][0], j[2][4])
                                 else:
-                                    print('totail')
-                                    print(total_lists)
+                                    pass
+                                    # print('totail')
+                                    # print(total_lists)
                                 page_two()
                             else:
                                 apboi = total_lists.get(j[-2]['hash'])
@@ -1247,7 +1288,7 @@ while True:
                                     page_two()
                             break
                         if (event.pos[0]>i[0]+30 and event.pos[0]<i[0]+210 and event.pos[1]>i[1]+135 and event.pos[1]<i[1]+185):
-                            print('info clickedd')
+                            # print('info clickedd')
                             allow_options = False
                             download_resources_enabled = j[-2]['download_res']
                             download_cors_resources_enabled = j[-2]['download_cors_res']
@@ -1265,8 +1306,8 @@ while True:
                                 try:
                                     shutil.rmtree(storage_location+str(puppy['hash']))
                                 except Exception as e:
-                                    print(e)
-                                    print("location: ", storage_location+str(puppy['hash']))
+                                    # print(e)
+                                    # print("location: ", storage_location+str(puppy['hash']))
                                     pass
                             with open('data/details.json','r') as mumbai:
                                 ggboi = json.load(mumbai)
@@ -1374,18 +1415,11 @@ while True:
                     page_two()
             
     elif page_num==3:
-        # if website_being_downloaded:
-        #     if len(websites[website_being_downloaded][1])!=len(websites[website_being_downloaded][2]):
-        #         pygame.time.set_timer(LOGS_LOADING, 2000, 0)
-        #         pygame.draw.rect(screen, (44, 42, 49), [220-125+4, -22, 560+250-8, 280+70+25+150-4], border_radius=20)
-        #         print(websites[website_being_downloaded][2])
-        #         for i in websites[website_being_downloaded][2]:
-        #             screen.blit(i[0],i[1])
-        #             print('printed')
-        #             # else:
-        #             #     print('crying')
-        #     else:
-        #         print(f'here: {websites[website_being_downloaded][1]} \nand\n {websites[website_being_downloaded][2]}')
+        if website_being_downloaded and websites[website_being_downloaded][9]:
+            websites[website_being_downloaded][9] = False
+            pygame.draw.rect(screen, (44, 42, 49), [220-125+4, -22, 560+250-8, 280+70+25+150-4], border_radius=20)
+            for i in websites[website_being_downloaded][2]:
+                screen.blit(i[0],i[1])
         # else:
         #     tj = 0
         #     for i in cached_log_renderers:
@@ -1510,7 +1544,7 @@ while True:
                     cancel_color = (255, 255, 255)          
                     
                 if event.type == LOGS_LOADING:
-                    print('updated logs baby')
+                    # print('updated logs baby')
                     if website_being_downloaded:
                         currji = websites[website_being_downloaded][1]
                         currji_lala = websites[website_being_downloaded][2]
@@ -1601,7 +1635,7 @@ while True:
                 websites_currently_in_process += 1
                 recalculate()
                 hashy = random.randint(500000,2000000)
-                process_man = subprocess.Popen(['python','website.py',textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),storage_location+str(hashy),'True','True',str(refetch_enabled),str(hashy),'{}','{}'],stdout=subprocess.PIPE)
+                process_man = subprocess.Popen(['python','src/website.py',textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),storage_location+str(hashy),'True','True',str(refetch_enabled),str(hashy),'{}','{}'],stdout=subprocess.PIPE)
                 website_being_downloaded = hashy
                 urlji = urllib.parse.quote(textinput.value.replace("\\","/"), safe=":/")
                 atempo = urllib.parse.urlparse(urlji)
@@ -1626,7 +1660,7 @@ while True:
                     "hash": hashy,
                     "completed": False,
                     'file_location': os.path.join(os.path.join(storage_location+str(hashy), str(boi_url.hostname)),'index.html')
-                }, [], [], None, process_man, False, False, False, threading.Thread(target=read_logs,args=(hashy,), daemon=True)]
+                }, [], [], None, process_man, False, False, False, threading.Thread(target=read_logs,args=(hashy,), daemon=True), False]
                 some_thread_result[hashy] = [{},{}]
                 websites[website_being_downloaded][8].start()
                 page_num = 3

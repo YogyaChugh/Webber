@@ -174,14 +174,12 @@ class Website:
         # temp_event.clear()
         if not self.failed:
             self.done = True
-            sys.stdout.write('$@1$@')
-            sys.stdout.flush()
+            print("$@1$@", flush=True)
             if self.settings.get('maintain_logs'):
                 self.logger.write(f"\n\t\t\t\t================================\n\t\t\t\tSUCCESS SCRAPING WEBSITE {self.url.geturl()}\n\t\t\t\t================================\n")
                 self.logger.flush()
         else:
-            sys.stdout.write('$@0$@')
-            sys.stdout.flush()
+            print("$@0$@", flush=True)
             if self.settings.get('maintain_logs'):
                 self.logger.write(f"\n\t\t\t\t================================\n\t\t\t\tFAILED SCRAPING WEBSITE FOR {self.url.geturl()}\n\t\t\t\t================================\n")
                 self.logger.flush()
@@ -196,8 +194,7 @@ class Website:
                 return
             # print('wtf part 2')
             self.logs.append(f"Downloading Webpage: {web_page.url.geturl()}")
-            sys.stdout.write(f"$@Downloading Webpage: {web_page.url.geturl()}$@")
-            sys.stdout.flush()
+            print(f"$@Downloading Webpage: {web_page.url.geturl()}$@", flush=True)
             self.special.write(f"Downloading Webpage: {web_page.url.geturl()}")
             self.special.flush()
             # print(f'CALLED FOR {web_page.url.geturl()}')
@@ -250,7 +247,7 @@ class Website:
                     for url in urls:
                         if self.stopped:
                             return
-                        print(f'Thread started for {url}')
+                        # print(f'Thread started for {url}')
                         t = StoppableThread(target=self.check_and_call,args=(web_page, url))
                         t.start()
                         temp_threads.append(t)
@@ -269,16 +266,14 @@ class Website:
                 
             web_page.save_file(ppp[0], ppp[1], web_page.content, web_page.file_type)
             self.logs.append(f"Download Success | {web_page.url.geturl()} |")
-            sys.stdout.write(f"$@Download Success | {web_page.url.geturl()} |$@")
-            sys.stdout.flush()
+            print(f"$@Download Success | {web_page.url.geturl()} |$@", flush=True)
             self.special.write(f"Download Success | {web_page.url.geturl()} |")
             self.special.flush()
 
         except Exception as e:
             # print('problem')
             self.logs.append(f"Download Failed | {web_page.url.geturl()} |")
-            sys.stdout.write(f"$@Download Failed | {web_page.url.geturl()} |$@")
-            sys.stdout.flush()
+            print(f"$@Download Failed | {web_page.url.geturl()} |$@", flush=True)
             self.special.write(f"Download Failed | {web_page.url.geturl()} |")
             self.special.flush()
             self.webpages_scraped[web_page.prev_link] = (web_page, False, False)
@@ -309,8 +304,7 @@ class Website:
                     web_page.children.append([url, os.path.relpath(temp[4], web_page.file_location).replace("\\","/")])
                     # print(f'Sending 1 {url} to {os.path.relpath(temp[4], web_page.file_location).replace("\\","/")}')
                     self.logs.append(f"Resource Download Success | {url} |")
-                    sys.stdout.write(f"$@Resource Download Success | {url} |$@")
-                    sys.stdout.flush()
+                    print(f"$@Resource Download Success | {url} |$@", flush=True)
                     self.special.write(f"Resource Download Success | {url} |")
                     self.special.flush()
             if self.stopped:
@@ -383,7 +377,7 @@ class Website:
                     # print(f'Sending 3 {url} to {os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location)}')
                     # print(f'THREAD | {url} |')
                     self.threads.append((url, t))
-                    print(f"Success started for {url}")
+                    # print(f"Success started for {url}")
                     if self.settings.get('maintain_logs'):
                         self.logger.write(f"\n\nDownloading Webpage | {new_url} |")
                         self.logger.flush()
@@ -411,8 +405,7 @@ class Website:
                             self.logger.write(f"\n\nDownload Complete | {new_url} |")
                             self.logger.flush()
                         self.logs.append(f"Resource Download Success | {url} |")
-                        sys.stdout.write(f"$@Resource Download Success | {url} |$@")
-                        sys.stdout.flush()
+                        print(f"$@Resource Download Success | {url} |$@", flush=True)
                         self.special.write(f"Resource Download Success | {url} |")
                         self.special.flush()
                     else:
@@ -421,8 +414,7 @@ class Website:
                         # print(f"CORS RES: {web_page.download_cors_res}")
         except Exception as e:
             self.logs.append(f"Resource Download Failed | {url} |")
-            sys.stdout.write(f"$@Resource Download Failed | {url} |$@")
-            sys.stdout.flush()
+            print(f"$@Resource Download Failed | {url} |$@", flush=True)
             self.special.write(f"Resource Download Failed | {url} |")
             self.special.flush()
             if self.settings.get('maintain_logs'):
@@ -484,14 +476,12 @@ class Website:
                 completed_resources[w] = self.resources_downloaded[w]
             
         self.logs.append(f"Paused Downloading Website | {self.url.geturl()} |")
-        sys.stdout.write(f"$@Paused Downloading Website | {self.url.geturl()} |$@")
-        sys.stdout.flush()
+        print(f"$@Paused Downloading Website | {self.url.geturl()} |$@", flush=True)
         self.special.write(f"Paused Downloading Website | {self.url.geturl()} |")
         self.special.flush()
         if delete_later:
             self.logs.append(f"Deleted Website Files | {self.url.geturl()} |")
-            sys.stdout.write(f"$@Deleted Website Files | {self.url.geturl()} |$@")
-            sys.stdout.flush()
+            print(f"$@Deleted Website Files | {self.url.geturl()} |$@", flush=True)
             self.special.write(f"Deleted Website Files | {self.url.geturl()} |")
             self.special.flush()
         self.canceled = True

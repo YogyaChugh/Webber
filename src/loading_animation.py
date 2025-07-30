@@ -1,3 +1,20 @@
+"""
+
+    Outdated File !
+    Contains animation for console based website downloading !
+
+    
+"""
+
+
+
+
+
+
+
+
+
+
 import time
 import sys
 import os

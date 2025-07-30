@@ -1,1 +1,1 @@
-{"Websites": []}
+{"Websites": [{"Name": "Website 1", "url": "www.example.com", "download_res": true, "download_cors_res": false, "cors": false, "cors_download_res": false, "cors_download_cors_res": false, "max_cors": 0, "same_origin_deviation": 0, "location": "sites/606698", "maintain_logs": true, "show_failed_files": true, "refetch": false, "logs": [], "hash": 606698, "completed": true, "file_location": "sites/606698\\www.example.com\\index.html"}]}
