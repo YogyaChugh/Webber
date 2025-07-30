@@ -25,7 +25,7 @@ def download_resource_safe(url, max=2):
                 return e.partial  #  Accept partial chunked data
             except urllib.request.HTTPError as ok:
                 if max>=0:
-                    print(f'Message is {ok.msg}')
+                    # print(f'Message is {ok.msg}')
                     time.sleep(1)
                     return download_resource_safe(url, max-1)
                 else:
@@ -190,7 +190,8 @@ class Webpage:
     def save_file(self, file_loc, fileName, file_content, file_type):
         # print(f"saving {os.path.join(file_loc, fileName)}")
         # if file_type=='text/html':
-        #     print('Content: ',file_content)     
+        #     print('Content: ',file_content)  
+        # print(f"Saved at {file_loc}")   
         try:
             # print(file_loc)
             os.makedirs(file_loc, exist_ok = True)

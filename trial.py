@@ -1,23 +1,31 @@
-from PIL import Image
-import pygame
+import subprocess, sys, asyncio, threading, time
 
-# Load animated GIF frames
+# Subprocess A: Sends a success bit
+proc_a = subprocess.Popen(
+    ['python', '-c', 'import sys,time; time.sleep(2); sys.stdout.write("12"); sys.stdout.flush(); time.sleep(2); sys.stdout.write("23")'],
+    stdout=subprocess.PIPE
+)
 
+# Subprocess B: Receives the bit and prints it
+# proc_b = subprocess.Popen(
+#     ['python', '-c', 'import sys; data = sys.stdin.read(); print("Subprocess B got:", data)'],
+#     stdin=proc_a.stdout
+# )
+toto = None
+def dothat():
+    global toto
+    toto = proc_a.stdout.read1()
 
-# Pygame setup
-pygame.init()
-screen = pygame.display.set_mode((frames[0].get_width(), frames[0].get_height()))
-clock = pygame.time.Clock()
-
-i = 0
-running = True
-while running:
-    screen.fill((0,0,0))
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-    screen.blit(frames[i], (0, 0))
-    pygame.display.update()
-    i = (i + 1) % len(frames)
-    clock.tick(30)  # ~10 FPS
+print('gg')
+man = threading.Thread(target=dothat)
+man.start()
+print('maggi')
+pasta = True
+while pasta:
+    print('hi')
+    time.sleep(5)
+    if toto:
+        print(toto)
+        man.join()
+        man = threading.Thread(target=dothat)
+        man.start()
