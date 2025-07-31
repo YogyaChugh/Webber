@@ -1942,7 +1942,7 @@ while True:
                 if (event.pos[0]>610 and event.pos[0]<610+150 and event.pos[1]>260 and event.pos[1]<260+50):
                     webbrowser.open('https://hackclub.slack.com/team/U09218J0E94')
                 if (event.pos[0]>120 and event.pos[0]<120+180 and event.pos[1]>500 and event.pos[1]<500+50):
-                    pass
+                    webbrowser.open('https://hackclub.slack.com/team/U09218J0E94')
         
         if set_cursor_back9:
             pygame.mouse.set_cursor(nw_mouse)
