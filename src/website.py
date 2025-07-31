@@ -60,7 +60,7 @@ class Website:
     index_file_location = ""
     refetch = False
     settings = {}
-    logger = open("webber_unknown.log",'w')
+    logger = open("temp/webber_unknown.log",'w')
     failed = False         # Whether fetching URLS failed
     thread_count = 0       # Num of threads
     threads = []           # List of tuples of (a thread, url associated with that thread)

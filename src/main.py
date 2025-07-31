@@ -17,22 +17,55 @@ import sys
 import math
 import webbrowser
 
-total_lists = {}
+assets = ['bgimg.png','cancel.gif','cancel.png','del.gif','delete.gif','delete.png','eye.png','fs.jpeg','github.png','gmail.png','hanging_spider.png','i-cursor.png','idea.gif','internet.gif','leftji.png','main_logo_webber.png','man.gif','meditation.gif','mouse.png','mouse2.png','pause.png','play.png','rocket_icon.png','sad.gif','slack.png','some_catie.gif','spider_logo_main.png','spider.png','ss.png','success.gif','tick.png','w_button_ji_animated.png','w_button_ji.png','fonts/FiraSans-Bold.ttf','fonts/HappyMonkey-Regular.ttf','fonts/LuckiestGuy-Regular.ttf','fonts/VarelaRound-Regular.ttf']
+
 pygame.init()
+font = pygame.font.Font("assets/fonts/VarelaRound-Regular.ttf", 24)
+img = pygame.image.load("assets/bgimg.png")
 screen = pygame.display.set_mode((1000, 667))
 clock = pygame.time.Clock()
+screen.blit(img,(0,0))
+bh = font.render("Loading Assets ...", True, (255, 255, 255))
+screen.blit(bh, (10,10))
+pygame.display.set_caption("Webber")
+pygame.display.update()
 
-screen.fill((0,0,0))
-font4 = pygame.font.Font("assets/FiraSans-Bold.ttf", 40)
+for ice in assets:
+    if not os.path.exists(f'assets/{ice}'):
+        screen.blit(img,(0,0))
+        bh = font.render("Missing Assets !! Please relaunch the installer to resolve this issue !!", True, (255, 255, 255))
+        screen.blit(bh, (10,10))
+        pygame.display.update()
+        time.sleep(10)
+        sys.exit()
+
+os.makedirs('data',exist_ok=True)
+os.makedirs('sites',exist_ok=True)
+os.makedirs('temp',exist_ok=True)
+re_write = True
+if os.path.exists('data/details.json'):
+    re_write = False
+    with open('data/details.json','r') as k:
+        try:
+            a = json.load(k)['Websites']
+        except:
+            re_write = True
+else:
+    with open('data/details.json','w') as ll:
+        json.dump({"Websites": []},ll)
+
+
+total_lists = {}
+
+font4 = pygame.font.Font("assets/fonts/FiraSans-Bold.ttf", 40)
 apman = font4.render("Loading Assets ...",True,(255,255,255))
 screen.blit(apman, (20,20))
 
-font = pygame.font.Font("assets/VarelaRound-Regular.ttf", 24)
-font2 = pygame.font.Font("assets/LuckiestGuy-Regular.ttf", 30)
-font3 = pygame.font.Font("assets/FiraSans-Bold.ttf", 30)
-font5 = pygame.font.Font("assets/FiraSans-Bold.ttf", 24)
-font6 = pygame.font.Font("assets/FiraSans-Bold.ttf", 18)
-font7 = pygame.font.Font("assets/LuckiestGuy-Regular.ttf", 50)
+font2 = pygame.font.Font("assets/fonts/LuckiestGuy-Regular.ttf", 30)
+font3 = pygame.font.Font("assets/fonts/FiraSans-Bold.ttf", 30)
+font5 = pygame.font.Font("assets/fonts/FiraSans-Bold.ttf", 24)
+font6 = pygame.font.Font("assets/fonts/FiraSans-Bold.ttf", 18)
+font7 = pygame.font.Font("assets/fonts/LuckiestGuy-Regular.ttf", 50)
 
 some_thread = {}
 some_thread_result = {}
@@ -60,9 +93,9 @@ aright = pygame.transform.rotate(aright, 180)
 
 github = pygame.image.load('assets/github.png')
 slack = pygame.image.load('assets/slack.png')
-img = pygame.image.load("assets/bgimg.png")
 simg = pygame.image.load("assets/fs.jpeg")
 simg.set_alpha(40)
+screenshot = pygame.image.load("assets/ss.png")
 # img.set_alpha(10)
 btn_img = pygame.image.load("assets/w_button_ji.png")
 btn_img_clicked = pygame.image.load("assets/w_button_ji_animated.png")
@@ -172,7 +205,7 @@ rectangle4 = pygame.Rect(65, 610, 160, 50)
 
 rectji = pygame.Rect(10, 10, 200, 50)
 rectji2 = pygame.Rect(15, 15, 50, 40)
-rectji3 = pygame.Rect(30, 22, 40, 40)
+rectji3 = pygame.Rect(30, 21, 40, 40)
 
 gif = Image.open("assets/meditation.gif")
 frames = []
@@ -289,6 +322,20 @@ try:
 except EOFError:
     pass  # All frames loaded
 
+gif9 = Image.open("assets/idea.gif")
+frames9 = []
+try:
+    while True:
+        frame9 = gif9.copy().convert("RGBA")
+        mode9 = frame9.mode
+        size9 = frame9.size
+        data9 = frame9.tobytes()
+        surf9 = pygame.image.fromstring(data9, size9, mode9)
+        frames9.append(surf9)
+        gif9.seek(gif9.tell() + 1)
+except EOFError:
+    pass  # All frames loaded
+
 
 
 
@@ -316,6 +363,7 @@ frame_num5 = 0
 frame_num6 = 0
 frame_num7 = 0
 frame_num8 = 0
+frame_num9 = 0
 
 base_pos = [50,100,900,200]
 
@@ -922,7 +970,7 @@ def page_four():
     if allow_options:
         pygame.draw.rect(screen, (48, 25, 52), rects['go_on'], border_radius=10)
         pygame.draw.rect(screen, (0, 0, 0), rects['go_on'], 6, border_radius=10)
-        screen.blit(aright, (rects['go_on'].x + 12, rects['go_on'].y + 7))
+        screen.blit(aright, (rects['go_on'].x + 12, rects['go_on'].y + 6))
     
     if resources_for_cors and cors_enabled:
         screen.blit(tick2, (435, 463))
@@ -1044,8 +1092,46 @@ def check_if_website_correct():
         page_four()
 
 
+def tip():
+    screen.fill((255, 255, 255))
+    screenshot.set_alpha(180)
+    screen.blit(screenshot, rect)
+    pygame.draw.rect(screen, (47, 21, 68), [200, 183, 600, 300], border_radius=20)
+    screen.blit(simg, (200, 183), (100, 60, 600, 73))
+    pygame.draw.rect(screen, (0, 0, 0), [200, 183, 600, 300], 8, border_radius=20)
+    
+    pygame.draw.line(screen, (0,0,0), (220, 255), (780, 255),6)
+    pygame.draw.line(screen, (171, 84, 139), (220, 258), (780, 258),3)
 
-main_window()
+    bro = font2.render("Tip Of The Day",True,(255,255,255))
+    screen.blit(bro, (240, 215))
+
+    advice = font6.render('Download as many websites as you want but remember !',True,(255,255,255))
+    advice2 = font6.render('Some websites have dependencies which would require',True,(255,255,255))
+    advice3 = font6.render('you to set Same Origin Crawl Limit to atleast 3 in',True,(255,255,255))
+    advice4 = font6.render('the settings as well as Turn on CORS',True,(255,255,255))
+    advice5 = font6.render('resources download.',True,(255,255,255))
+    advice6 = font6.render('NOTE:',True,(255,255,255))
+    advice7 = font6.render('Default Settings are perfect for',True,(255,255,255))
+    advice8 = font6.render('"summer.hackclub.com"',True,(255,255,255))
+    screen.blit(advice, (240, 270))
+    screen.blit(advice2, (240, 295))
+    screen.blit(advice3, (240, 320))
+    screen.blit(advice4, (240, 345))
+    screen.blit(advice5, (240, 370))
+    screen.blit(advice6, (240, 395))
+    screen.blit(advice7, (240, 420))
+    screen.blit(advice8, (240, 445))
+    pygame.draw.line(screen, (0,0,0),(240,416),(284,416),4)
+
+if not os.path.exists('webber.log'):
+    with open('webber.log','w') as f:
+        f.write('Initialized Application !')
+    page_num=7
+    tip()
+else:
+    page_num=1
+    main_window()
 
 
 while True:
@@ -1942,18 +2028,39 @@ while True:
                 if (event.pos[0]>610 and event.pos[0]<610+150 and event.pos[1]>260 and event.pos[1]<260+50):
                     webbrowser.open('https://hackclub.slack.com/team/U09218J0E94')
                 if (event.pos[0]>120 and event.pos[0]<120+180 and event.pos[1]>500 and event.pos[1]<500+50):
-                    webbrowser.open('https://hackclub.slack.com/team/U09218J0E94')
+                    webbrowser.open('https://webber-credits.onrender.com/')
         
         if set_cursor_back9:
             pygame.mouse.set_cursor(nw_mouse)
 
+    elif page_num == 7:
+        pygame.draw.rect(screen, (47, 21, 68), [630, 320, 150, 150], border_radius=20)
+        screen.blit(frames9[frame_num9], (630, 320))
+        pygame.display.update()
+        frame_num9 = (frame_num9 + 1) % len(frames9)
+        
+        recr = pygame.draw.circle(screen, (30, 28, 34), (795, 183), 28)
+        pygame.draw.circle(screen, (0, 0, 0), (795, 183), 28, 5)
+        screen.blit(cancel, (780, 168))
+        
+        if recr.collidepoint(pos):
+            pygame.mouse.set_cursor(nw_mouse2)
+        else:
+            pygame.mouse.set_cursor(nw_mouse)
+            
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if recr.collidepoint(event.pos):
+                    page_num = 1
+                    screen.set_alpha(255)
+                    main_window()
 
 
     for event in events:
         if event.type == pygame.QUIT:
             if quitting_not_started:
                 quitting_not_started = False
-                screen.fill((0, 0, 0))
+                screen.blit(img,(0,0))
                 bh = font.render("Exiting safely ...", True, (255, 255, 255))
                 screen.blit(bh, (10,10))
                 pygame.display.update()

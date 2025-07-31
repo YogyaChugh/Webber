@@ -66,7 +66,7 @@ class Webpage:
     main_files = set() # Contains .html, .css and .js files !
     res_files = set() # Other files !
     maintain_logs = True #temp
-    logs = open("webber_unknown.log",'w')
+    logs = open("temp/webber_unknown.log",'w')
     children = []
     def __init__(self,url, website, file_type, same_origin_deviation, cors_level, prev_link, content = None, download_res = True, download_cors_res = True):
         website.webpages_created.append(self)
