@@ -76,6 +76,7 @@ class Website:
     done = False
     completed = False
     hash = ""
+    ab = 0
 
     def __init__(self,settings):
         # Frequently used ones stored !
@@ -269,9 +270,11 @@ class Website:
             print(f"$@Download Success | {web_page.url.geturl()} |$@", flush=True)
             self.special.write(f"Download Success | {web_page.url.geturl()} |")
             self.special.flush()
+            self.ab -= 1
 
         except Exception as e:
             # print('problem')
+            self.ab -= 1
             self.logs.append(f"Download Failed | {web_page.url.geturl()} |")
             print(f"$@Download Failed | {web_page.url.geturl()} |$@", flush=True)
             self.special.write(f"Download Failed | {web_page.url.geturl()} |")
@@ -288,6 +291,8 @@ class Website:
                 self.logger.write(f"Error: {exception_string}")
                 self.logger.flush()
                 # print(exception_string)
+            if isinstance(e, exceptions.NoInternetConnection):
+                print("$@No Internet Connection !!$@", flush=True)
                 
     def check_and_call(self, web_page, url):
         try:

@@ -238,30 +238,31 @@ class Webpage:
         final_content = ""
         #! ONLY THING WRITTEN BY AI (CHATGPT) #I_SUCK_AT_REGEX
         pattern = r'''
-        ["']                                   # Opening quote
-        (
-            (?:                                # Case 1: Starts with path/prefix
-                (?:https?:\/\/|www\.|\/{1,2}|\\{1,2}|\.{1,2}[\\/])
-                [^"'\\\r\n]+
+            ["']                             # Opening quote
+            (
+                (?:                          # Case 1: Starts with known path/prefix
+                    (?:https?:\/\/|www\.|\/{1,2}|\\{1,2}|\.{1,2}[\\/])  # path or protocol
+                    [^"'\s\\$<>\r\n][^"'\s\\<>\r\n]*                   # non-empty, avoids symbols
+                )
+                |
+                (?:                          # Case 2: Ends in known extension
+                    [^"'\s\\<>\r\n]+?        # non-empty content
+                    \.
+                    (?:DOCX?|EML|MSG|ODT|PAGES|RTF|TEX|TXT|WPD|AAE|CSV|DAT|KEY|LOG|MPP|OBB|
+                    PPTX?|RPT|TAR|VCF|XML|AIF|FLAC|M3U|M4A|MID|MP3|OGG|WAV|WMA|3GP|ASF|
+                    AVI|FLV|M4V|MOV|MP4|MPG|SRT|SWF|TS|VOB|WMV|3DM|3DS|BLEND|DAE|FBX|
+                    MAX|OBJ|BMP|DCM|DDS|DJVU|GIF|HEIC|JPG|PNG|PSD|TGA|TIF|AI|CDR|EMF|
+                    EPS|PS|SKETCH|SVG|VSDX|INDD|OXPS|PDF|PMD|PUB|QXP|XPS|NUMBERS|ODS|
+                    XLR|XLSX?|ACCDB|CRYPT14|DB|MDB|ODB|PDB|SQL|SQLITE|APK|BAT|BIN|CMD|
+                    EXE|IPA|JAR|RUN|SH|DEM|GAM|GBA|NES|PAK|PKG|ROM|SAV|DGN|DWG|DXF|
+                    STEP|STL|STP|GPX|KML|KMZ|OSM|ASPX?|CER|CFM|CSR|CSS|HTML|JS|JSON|
+                    JSP|PHP|XHTML|CRX|ECF|PLUGIN|SAFARIEXTZ|XPI|FNT|OTF|TTF|WOFF2?|
+                    ANI|CAB|CPL|CUR|DESKTHEMEPACK|DLL|DMP|DRV|ICNS|ICO)
+                )
             )
-            |
-            (?:                                # Case 2: Ends with known extension
-                [^"'\\\r\n]*?
-                \.
-                (?:DOCX?|EML|MSG|ODT|PAGES|RTF|TEX|TXT|WPD|AAE|CSV|DAT|KEY|LOG|MPP|OBB|
-                PPTX?|RPT|TAR|VCF|XML|AIF|FLAC|M3U|M4A|MID|MP3|OGG|WAV|WMA|3GP|ASF|
-                AVI|FLV|M4V|MOV|MP4|MPG|SRT|SWF|TS|VOB|WMV|3DM|3DS|BLEND|DAE|FBX|
-                MAX|OBJ|BMP|DCM|DDS|DJVU|GIF|HEIC|JPG|PNG|PSD|TGA|TIF|AI|CDR|EMF|
-                EPS|PS|SKETCH|SVG|VSDX|INDD|OXPS|PDF|PMD|PUB|QXP|XPS|NUMBERS|ODS|
-                XLR|XLSX?|ACCDB|CRYPT14|DB|MDB|ODB|PDB|SQL|SQLITE|APK|BAT|BIN|CMD|
-                EXE|IPA|JAR|RUN|SH|DEM|GAM|GBA|NES|PAK|PKG|ROM|SAV|DGN|DWG|DXF|
-                STEP|STL|STP|GPX|KML|KMZ|OSM|ASPX?|CER|CFM|CSR|CSS|HTML|JS|JSON|
-                JSP|PHP|XHTML|CRX|ECF|PLUGIN|SAFARIEXTZ|XPI|FNT|OTF|TTF|WOFF2?|
-                ANI|CAB|CPL|CUR|DESKTHEMEPACK|DLL|DMP|DRV|ICNS|ICO)
-            )
-        )
-        ["']                                   # Closing quote
+            ["']                             # Closing quote
         '''
+
 
         #! TILL HERE ONLY !
 
