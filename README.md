@@ -1,5 +1,3 @@
-<a id="readme-top"></a>
-
 <!-- PROJECT LOGO -->
 <div align="center">
   <a href="https://github.com/YogyaChugh/Webber">
@@ -57,8 +55,6 @@ It stores files locally and is strictly restricted for usage on websites which p
 
 Websites like `www.youtube.com` don't allow this and it's advised to follow the same. This project is only for educational purposes. It neither spreads any form of misinformation nor promotes non-abidement of policies.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 ### Built With
@@ -70,9 +66,6 @@ Websites like `www.youtube.com` don't allow this and it's advised to follow the 
 [![Pillow](https://img.shields.io/badge/-Pillow-3c2c41?style=flat&logo=python&logoColor=white)](https://python-pillow.org/)
 [![cssbeautifier](https://img.shields.io/badge/-cssbeautifier-264de4?style=flat&logo=css3&logoColor=white)](https://pypi.org/project/cssbeautifier/)
 [![jsbeautifier](https://img.shields.io/badge/-jsbeautifier-F7DF1E?style=flat&logo=javascript&logoColor=black)](https://pypi.org/project/jsbeautifier/)
-
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 
@@ -134,9 +127,6 @@ Running the project can be done in 2 ways !
 ```
 
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
 <!-- CONTRIBUTING -->
 ## Contributing
 
@@ -145,16 +135,12 @@ Contributions are what make the open source community such an amazing place to l
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
 Don't forget to give the project a star! Thanks again!
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- LICENSE -->
 ## License
 
 Distributed under the Creative Commons CC0 1.0 License. See <a href="https://github.com/YogyaChugh/Webber/blob/master/LICENSE">`LICENSE`</a> for more information.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 
@@ -169,13 +155,9 @@ yogya.developer@gmail.com / yogyachugh.coder@gmail.com
 
 [Slack@me]('https://hackclub.slack.com/team/U09218J0E94')
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
 Credits to all the resources used can be found <a href="https://webber-credits.onrender.com">here</a>
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
