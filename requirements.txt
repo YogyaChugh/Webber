@@ -1,4 +1,5 @@
 urlextract
+urllib3
 bs4
 cssbeautifier
 jsbeautifier
@@ -11,3 +12,5 @@ pygame-textinput
 pillow
 python-magic-bin
 psutil
+asyncio
+pyinstaller

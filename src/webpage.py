@@ -140,6 +140,7 @@ class Webpage:
         return {'file_content': content, 'file_type': file_type}
     
     def create_offline_location(self, file_loc_url, file_type, main=False, inside_folder = ""):
+        print("$@"+str((file_loc_url.geturl().split("/"))[-1])+"$@")
         fileName = "index.html"
         file_loc_url = urlparse(urllib.parse.quote(file_loc_url.geturl().replace("\\","/"), safe=":/"))
         temp_split = (file_loc_url.geturl()).split("/")
@@ -164,14 +165,14 @@ class Webpage:
 
         while file_path.startswith("/") or file_path.startswith("\\"):
             file_path = "/".join(file_path.split("/")[1:])
-        new_file_path = ""
+        new_file_path = file_path
         for i in range(len(file_path)):
             code = ord(file_path[i])
-            if (code<47 or code>57) and (code<65 or code>172) and code not in [33,35,36,38,39,40,41,43,44,45,46,47,59,61,64,123,125,126]:
+            if (code<47 or code>57) and (code<65 or code>172) and code not in [33,35,36,37,38,39,40,41,43,44,45,46,47,59,61,64,123,125,126]:
                 new_file_path += chr((code % 65) + 65)
             else:
                 new_file_path += file_path[i]
-        # print(new_file_path)
+        # print("$@New: ",new_file_path,'$@')
         if inside_folder:
             tempy = os.path.join(inside_folder, new_file_path)
         else:

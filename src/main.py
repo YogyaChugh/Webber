@@ -1,47 +1,48 @@
+import os
+os.makedirs('data',exist_ok=True)
+os.makedirs('sites',exist_ok=True)
+os.makedirs('temp',exist_ok=True)
 import pygame_textinput
 from PIL import Image
 import pygame
 import time
 import json
 import webpage, website
-import os
 import asyncio
 import subprocess
-import os
 import psutil
 import threading
 import random
 import urllib.parse
 import shutil
 import sys
-import math
 import webbrowser
+
+BASE = getattr(sys, '_MEIPASS', os.path.abspath('.'))
 
 assets = ['bgimg.png','cancel.gif','cancel.png','del.gif','delete.gif','delete.png','eye.png','fs.jpeg','github.png','gmail.png','hanging_spider.png','i-cursor.png','idea.gif','internet.gif','leftji.png','main_logo_webber.png','man.gif','meditation.gif','mouse.png','mouse2.png','pause.png','play.png','rocket_icon.png','sad.gif','slack.png','some_catie.gif','spider_logo_main.png','spider.png','ss.png','success.gif','tick.png','w_button_ji_animated.png','w_button_ji.png','fonts/FiraSans-Bold.ttf','fonts/HappyMonkey-Regular.ttf','fonts/LuckiestGuy-Regular.ttf','fonts/VarelaRound-Regular.ttf']
 
 pygame.init()
-font = pygame.font.Font("assets/fonts/VarelaRound-Regular.ttf", 24)
-img = pygame.image.load("assets/bgimg.png")
+fontp = pygame.font.Font(None,24)
+img = pygame.image.load(os.path.join(BASE,"assets/bgimg.png"))
 screen = pygame.display.set_mode((1000, 667))
 clock = pygame.time.Clock()
 screen.blit(img,(0,0))
-bh = font.render("Loading Assets ...", True, (255, 255, 255))
+bh = fontp.render("Loading Assets ...", True, (255, 255, 255))
 screen.blit(bh, (10,10))
 pygame.display.set_caption("Webber")
 pygame.display.update()
 
-for ice in assets:
-    if not os.path.exists(f'assets/{ice}'):
-        screen.blit(img,(0,0))
-        bh = font.render("Missing Assets !! Please relaunch the installer to resolve this issue !!", True, (255, 255, 255))
-        screen.blit(bh, (10,10))
-        pygame.display.update()
-        time.sleep(10)
-        sys.exit()
+# for ice in assets:
+#     if not os.path.exists(f'assets/{ice}'):
+#         screen.blit(img,(0,0))
+#         bh = fontp.render("Missing Assets !! Please re-install to resolve this issue !!", True, (255, 255, 255))
+#         screen.blit(bh, (10,10))
+#         pygame.display.update()
+#         time.sleep(10)
+#         sys.exit()
 
-os.makedirs('data',exist_ok=True)
-os.makedirs('sites',exist_ok=True)
-os.makedirs('temp',exist_ok=True)
+
 re_write = True
 if os.path.exists('data/details.json'):
     re_write = False
@@ -56,16 +57,18 @@ else:
 
 
 total_lists = {}
+cached_done_once = True
 
-font4 = pygame.font.Font("assets/fonts/FiraSans-Bold.ttf", 40)
-apman = font4.render("Loading Assets ...",True,(255,255,255))
+apman = fontp.render("Loading Assets ...",True,(255,255,255))
 screen.blit(apman, (20,20))
 
-font2 = pygame.font.Font("assets/fonts/LuckiestGuy-Regular.ttf", 30)
-font3 = pygame.font.Font("assets/fonts/FiraSans-Bold.ttf", 30)
-font5 = pygame.font.Font("assets/fonts/FiraSans-Bold.ttf", 24)
-font6 = pygame.font.Font("assets/fonts/FiraSans-Bold.ttf", 18)
-font7 = pygame.font.Font("assets/fonts/LuckiestGuy-Regular.ttf", 50)
+font = pygame.font.Font(os.path.join(BASE,"assets/fonts/VarelaRound-Regular.ttf"), 24)
+font2 = pygame.font.Font(os.path.join(BASE,"assets/fonts/LuckiestGuy-Regular.ttf"), 30)
+font3 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 30)
+font4 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 40)
+font5 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 24)
+font6 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 18)
+font7 = pygame.font.Font(os.path.join(BASE,"assets/fonts/LuckiestGuy-Regular.ttf"), 50)
 
 some_thread = {}
 some_thread_result = {}
@@ -78,37 +81,37 @@ textinput = pygame_textinput.TextInputVisualizer(manager=manager, font_object=fo
 
 textinput.font_color = (255, 255, 255)
 
-main_logoji = pygame.image.load("assets/main_logo_webber.png")
+main_logoji = pygame.image.load(os.path.join(BASE,"assets/main_logo_webber.png"))
 
-logo = pygame.image.load("assets/spider_logo_main.png")
+logo = pygame.image.load(os.path.join(BASE,"assets/spider_logo_main.png"))
 logo3 = pygame.transform.scale(logo, (96, 96))
 logo2 = pygame.transform.scale(logo, (64,64))
 pygame.display.set_icon(logo)
 pygame.display.set_caption("Webber")
 
-aleft = pygame.image.load("assets/leftji.png")
+aleft = pygame.image.load(os.path.join(BASE,"assets/leftji.png"))
 aleft = pygame.transform.scale(aleft, (30,30))
 aright = aleft.copy()
 aright = pygame.transform.rotate(aright, 180)
 
-github = pygame.image.load('assets/github.png')
-slack = pygame.image.load('assets/slack.png')
-simg = pygame.image.load("assets/fs.jpeg")
+github = pygame.image.load(os.path.join(BASE,'assets/github.png'))
+slack = pygame.image.load(os.path.join(BASE,'assets/slack.png'))
+simg = pygame.image.load(os.path.join(BASE,"assets/fs.jpeg"))
 simg.set_alpha(40)
-screenshot = pygame.image.load("assets/ss.png")
+screenshot = pygame.image.load(os.path.join(BASE,"assets/ss.png"))
 # img.set_alpha(10)
-btn_img = pygame.image.load("assets/w_button_ji.png")
-btn_img_clicked = pygame.image.load("assets/w_button_ji_animated.png")
-spider_img = pygame.image.load("assets/spider.png")
-spider_hanging_img = pygame.image.load("assets/hanging_spider.png")
-rocket = pygame.image.load("assets/rocket_icon.png")
-delete = pygame.image.load("assets/delete.png")
-pause = pygame.image.load("assets/pause.png")
-play = pygame.image.load("assets/play.png")
-cancel = pygame.image.load("assets/cancel.png")
-tick = pygame.image.load("assets/tick.png")
-eye = pygame.image.load('assets/eye.png')
-gmail = pygame.image.load('assets/gmail.png')
+btn_img = pygame.image.load(os.path.join(BASE,"assets/w_button_ji.png"))
+btn_img_clicked = pygame.image.load(os.path.join(BASE,"assets/w_button_ji_animated.png"))
+spider_img = pygame.image.load(os.path.join(BASE,"assets/spider.png"))
+spider_hanging_img = pygame.image.load(os.path.join(BASE,"assets/hanging_spider.png"))
+rocket = pygame.image.load(os.path.join(BASE,"assets/rocket_icon.png"))
+delete = pygame.image.load(os.path.join(BASE,"assets/delete.png"))
+pause = pygame.image.load(os.path.join(BASE,"assets/pause.png"))
+play = pygame.image.load(os.path.join(BASE,"assets/play.png"))
+cancel = pygame.image.load(os.path.join(BASE,"assets/cancel.png"))
+tick = pygame.image.load(os.path.join(BASE,"assets/tick.png"))
+eye = pygame.image.load(os.path.join(BASE,'assets/eye.png'))
+gmail = pygame.image.load(os.path.join(BASE,'assets/gmail.png'))
 
 github = pygame.transform.scale(github, (45,45))
 slack = pygame.transform.scale(slack, (108, 44.25))
@@ -162,17 +165,17 @@ DOWNLOAD_THE_DAMN_WEBSITE = pygame.USEREVENT
 
 storage_location = "sites/"
 
-surf = pygame.image.load("assets/mouse.png")
+surf = pygame.image.load(os.path.join(BASE,"assets/mouse.png"))
 surf = pygame.transform.scale(surf, (50,50))
 nw_mouse = pygame.cursors.Cursor((5, 5), surf)
 
 
-surf2 = pygame.image.load("assets/mouse2.png")
+surf2 = pygame.image.load(os.path.join(BASE,"assets/mouse2.png"))
 surf2 = pygame.transform.scale(surf2, (50,50))
 nw_mouse2 = pygame.cursors.Cursor((5, 5), surf2)
 pygame.mouse.set_cursor(nw_mouse2)
 
-surf3 = pygame.image.load("assets/i-cursor.png")
+surf3 = pygame.image.load(os.path.join(BASE,"assets/i-cursor.png"))
 surf3 = pygame.transform.scale(surf3, (40,40))
 nw_mouse3 = pygame.cursors.Cursor((5, 5), surf3)
 pygame.mouse.set_cursor(nw_mouse3)
@@ -207,7 +210,7 @@ rectji = pygame.Rect(10, 10, 200, 50)
 rectji2 = pygame.Rect(15, 15, 50, 40)
 rectji3 = pygame.Rect(30, 21, 40, 40)
 
-gif = Image.open("assets/meditation.gif")
+gif = Image.open(os.path.join(BASE,"assets/meditation.gif"))
 frames = []
 try:
     while True:
@@ -221,7 +224,7 @@ try:
 except EOFError:
     pass  # All frames loaded
 
-gif2 = Image.open("assets/some_catie.gif")
+gif2 = Image.open(os.path.join(BASE,"assets/some_catie.gif"))
 frames2 = []
 try:
     while True:
@@ -236,7 +239,7 @@ except EOFError:
     pass  # All frames loaded
 
 
-gif3 = Image.open("assets/success.gif")
+gif3 = Image.open(os.path.join(BASE,"assets/success.gif"))
 frames3 = []
 try:
     while True:
@@ -250,7 +253,7 @@ try:
 except EOFError:
     pass  # All frames loaded
 
-gif4 = Image.open("assets/cancel.gif")
+gif4 = Image.open(os.path.join(BASE,"assets/cancel.gif"))
 frames4 = []
 try:
     while True:
@@ -264,7 +267,7 @@ try:
 except EOFError:
     pass  # All frames loaded
 
-gif5 = Image.open("assets/del.gif")
+gif5 = Image.open(os.path.join(BASE,"assets/del.gif"))
 frames5 = []
 try:
     while True:
@@ -278,7 +281,7 @@ try:
 except EOFError:
     pass  # All frames loaded
 
-gif6 = Image.open("assets/sad.gif")
+gif6 = Image.open(os.path.join(BASE,"assets/sad.gif"))
 frames6 = []
 try:
     while True:
@@ -293,7 +296,7 @@ except EOFError:
     pass  # All frames loaded
 
 
-gif7 = Image.open("assets/internet.gif")
+gif7 = Image.open(os.path.join(BASE,"assets/internet.gif"))
 frames7 = []
 try:
     while True:
@@ -308,7 +311,7 @@ except EOFError:
     pass  # All frames loaded
 
 
-gif8 = Image.open("assets/man.gif")
+gif8 = Image.open(os.path.join(BASE,"assets/man.gif"))
 frames8 = []
 try:
     while True:
@@ -322,7 +325,7 @@ try:
 except EOFError:
     pass  # All frames loaded
 
-gif9 = Image.open("assets/idea.gif")
+gif9 = Image.open(os.path.join(BASE,"assets/idea.gif"))
 frames9 = []
 try:
     while True:
@@ -406,7 +409,7 @@ circle_rect = pygame.draw.circle(screen, (30, 28, 34), (795, 83), 28)
 circle_rectl = pygame.draw.circle(screen, (30, 28, 34), (795+125+35, 83-35), 28)
 
 
-with open("data/file_types.json",'r') as file_tp:
+with open(os.path.join(BASE,"data/file_types.json"),'r') as file_tp:
         a = json.load(file_tp)
 os.environ['file_types'] = str(a['file_types_to_mime'])
     
@@ -511,9 +514,9 @@ def read_logs(hash):
             log2.append("0")
         time.sleep(1)
     else:
-        print('got the issue ??')
+        # print('got the issue ??')
         if not websites[hash][5] and not websites[hash][7]:
-            print('nope')
+            # print('nope')
             for i in log2:
                 # print(i)
                 if i.strip()=="1":
@@ -645,7 +648,7 @@ def read_logs(hash):
                         websites[hash][2].append([obj, [120, websites[hash][2][-1][1][1]+30]])
                     for i in websites[hash][2]:
                         i[1][1] -= 30
-    print('byeee')
+    # print('byeee')
 
 info_rects = []
 delete_rects = []
@@ -693,7 +696,8 @@ update_list(True)
 
 
 def run_process_man(url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, resources, webpages):
-    process_ji = subprocess.Popen(['python', 'src/website.py', url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, resources, webpages],stdout=subprocess.PIPE)
+    script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'website.py')
+    process_ji = subprocess.Popen(['python', script_path, url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, resources, webpages],stdout=subprocess.PIPE)
     websites[eval(hash)][4] = process_ji
     websites[eval(hash)][8] = threading.Thread(target=read_logs,args=(eval(hash),),daemon=True)
     websites[eval(hash)][8].start()
@@ -996,7 +1000,7 @@ def page_three():
     else:
         a = font3.render(cached_name_for_website,True,(255, 255, 255)) #NAME
         screen.blit(a, [100, 533])
-        a = font3.render('#'+cached_name_for_website2,True,(255, 255, 255)) #NAME
+        a = font3.render('#'+str(cached_name_for_website2),True,(255, 255, 255)) #NAME
         screen.blit(a, [100, 573])
     circle_rectl = pygame.draw.circle(screen, (30, 28, 34), (795+125+35, 83-35), 28)
     pygame.draw.circle(screen, (0, 0, 0), (795+125+35, 83-35), 28, 5)
@@ -1460,7 +1464,8 @@ while True:
                                         dothat = False
                                         break
                                 if dothat:
-                                    process = subprocess.Popen(['python','src/webview_launch.py',"../" + j[-2]['file_location'],f'Webber - {j[-2]['hash']}'])
+                                    script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'webview_launch.py')
+                                    process = subprocess.Popen(['python', script_path,"../" + j[-2]['file_location'],f'Webber - {j[-2]['hash']}'])
                                     total_lists[j[-2]['hash']] = ([j[-2]['file_location'],process])
                                     clicked.append(j[-2]['hash'])
                                     pygame.draw.rect(screen, (211, 214, 219), (i[0]+685,i[1]+14, 180, 50), border_radius=12)
@@ -1642,12 +1647,15 @@ while True:
                                     for i in websites[dosa][2]:
                                         i[1][1] -= 90
                                     websites[dosa][9] = True
+                                    completed.append(dosa)
                                     recalculate()
                                     page_two()
                                     break
                             if event.pos[0]>dosa_location[0]+220 and event.pos[0]<dosa_location[0]+220+50 and event.pos[1]>dosa_location[1]+135 and event.pos[1]<dosa_location[1]+135+50:
                                 website_being_downloaded = dosa
                                 page_num = 3
+                                cached_done_once = True
+                                cached_log_renderers = []
                                 page_three()
                                 websites[dosa][9] = True
                                 break
@@ -1673,18 +1681,17 @@ while True:
                                 base_pos[1] += 50
                     page_two()
             
-    elif page_num==3:
+    elif page_num == 3:
         if website_being_downloaded and websites[website_being_downloaded][9]:
             websites[website_being_downloaded][9] = False
             pygame.draw.rect(screen, (44, 42, 49), [220-125+4, -22, 560+250-8, 280+70+25+150-4], border_radius=20)
             for i in websites[website_being_downloaded][2]:
                 screen.blit(i[0],i[1])
-        # else:
-        #     tj = 0
-        #     for i in cached_log_renderers:
-        #         tj += 1
-        #         if not i[1][1]<0 and not i[1][1]>667:
-        #             screen.blit(i[0],i[1])
+                cached_log_renderers.append(i)
+        elif not website_being_downloaded and cached_done_once:
+            cached_done_once = False
+            for i in cached_log_renderers:
+                screen.blit(i[0],i[1])
                 
         if website_being_downloaded and not websites[website_being_downloaded][7]:
             if websites[website_being_downloaded][3] is None or websites[website_being_downloaded][5]:
@@ -1831,6 +1838,7 @@ while True:
                         for i in websites[website_being_downloaded][2]:
                             i[1][1] -= 90
                         websites[website_being_downloaded][9] = True
+                        completed.append(website_being_downloaded)
                         website_being_downloaded = None
                         recalculate()
                         remove_the_buttons()
@@ -1910,7 +1918,8 @@ while True:
                 websites_currently_in_process += 1
                 recalculate()
                 hashy = random.randint(500000,2000000)
-                process_man = subprocess.Popen(['python','src/website.py',textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),storage_location+str(hashy),'True','True',str(refetch_enabled),str(hashy),'{}','{}'],stdout=subprocess.PIPE)
+                script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'website.py')
+                process_man = subprocess.Popen(['python', script_path,textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),storage_location+str(hashy),'True','True',str(refetch_enabled),str(hashy),'{}','{}'],stdout=subprocess.PIPE)
                 website_being_downloaded = hashy
                 urlji = urllib.parse.quote(textinput.value.replace("\\","/"), safe=":/")
                 atempo = urllib.parse.urlparse(urlji)
@@ -1939,6 +1948,8 @@ while True:
                 some_thread_result[hashy] = [{},{}]
                 websites[website_being_downloaded][8].start()
                 page_num = 3
+                cached_done_once = True
+                cached_log_renderers = []
                 page_three()
                 obj1 = font.render("="*40, True, (255, 255, 255)) 
                 obj = font.render(f"Scraping Website {textinput.value}",True, (255,255,255))
@@ -1999,9 +2010,6 @@ while True:
                 rectji3.x -= 10
                 draw_back_button = True
         
-        (450, 260, 150,50)
-        (610, 260, 150,50)
-        (120, 500, 180, 50)
         if (pos[0]>450 and pos[0]<450+150 and pos[1]>260 and pos[1]<260+50) or (pos[0]>610 and pos[0]<610+150 and pos[1]>260 and pos[1]<260+50) or (pos[0]>120 and pos[0]<120+180 and pos[1]>500 and pos[1]<500+50):
             set_cursor_back9 = False
             pygame.mouse.set_cursor(nw_mouse2)
@@ -2085,7 +2093,7 @@ while True:
                         except:
                             pass
                 time.sleep(0.3)
-                exit()
+                sys.exit()
         if event.type == DELETE_IT:
             if change_the_page:
                 page_num = last_page

@@ -3,3 +3,7 @@ new/
 sites/
 temp/
 src/__pycache__/
+.env/
+build/
+dist/
+webber.log

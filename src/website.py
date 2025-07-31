@@ -1,5 +1,4 @@
 from urllib.parse import urlparse
-import urllib.parse
 import exceptions
 import shutil
 import os
@@ -7,13 +6,11 @@ import json
 from bs4 import BeautifulSoup
 import cssbeautifier
 import jsbeautifier
-import webview
 import threading
 import traceback
 import sys
 import magic
 from webpage import *
-import random
 # from concurrent.futures import ThreadPoolExecutor, wait
 
 # executor = ThreadPoolExecutor(max_workers=3)

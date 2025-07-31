@@ -24,9 +24,13 @@ if __name__ == "__main__":
     if url and name:
         webview.settings['ALLOW_DOWNLOADS'] = True
         webview.settings['OPEN_EXTERNAL_LINKS_IN_BROWSER'] = False
-        window = webview.create_window(name ,url,confirm_close=True, zoomable=True,width=1000,
-        height= 700,
-        resizable=False)
-        # with open(f"web_{url}.pkl","wb") as ok:
-        #     dill.dump([url, window],ok)
-        webview.start(menu=menu)
+        window = webview.create_window(
+            name,
+            url,
+            confirm_close=True,
+            zoomable=True,
+            width=1000,
+            height= 700,
+            resizable=False
+        )
+        webview.start(menu=menu, icon='assets/spider_logo_main.png')
