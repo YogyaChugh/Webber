@@ -1,13 +1,12 @@
 <a id="readme-top"></a>
 
 <!-- PROJECT LOGO -->
-<br />
 <div align="center">
   <a href="https://github.com/YogyaChugh/Webber">
     <img src="assets/spider_logo_main.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">Webber</h3>
+  <h1 align="center">Webber</h3>
 
   <p align="center">
     A simple & easy way to download websites locally so you don't have to stay online all the time.
