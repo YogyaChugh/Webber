@@ -1164,8 +1164,8 @@ def tip():
     screen.blit(advice7, (240, 420))
     screen.blit(advice8, (240, 445))
 
-if not os.path.exists('webber.log'):
-    with open('webber.log','w') as f:
+if not os.path.exists('temp/webber.log'):
+    with open('temp/webber.log','w') as f:
         f.write('Initialized Application !')
     page_num=7
     tip()
