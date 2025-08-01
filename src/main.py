@@ -17,25 +17,29 @@ import urllib.parse
 import shutil
 import sys
 import webbrowser
+from pathlib import Path
 
 
 MAX_WEBSITES = 2
 
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    BASE = str(Path(sys._MEIPASS))
+else:
+    BASE = os.path.abspath(Path(__file__).parent.parent)
 
 
+# BASE = getattr(sys, '_MEIPASS', os.path.abspath('.'))
 
-BASE = getattr(sys, '_MEIPASS', os.path.abspath('.'))
-
-assets = ['bgimg.png','cancel.gif','cancel.png','del.gif','delete.gif','delete.png','eye.png','fs.jpeg','github.png','gmail.png','hanging_spider.png','i-cursor.png','idea.gif','internet.gif','leftji.png','main_logo_webber.png','man.gif','meditation.gif','mouse.png','mouse2.png','pause.png','play.png','rocket_icon.png','sad.gif','slack.png','some_catie.gif','spider_logo_main.png','spider.png','ss.png','success.gif','tick.png','w_button_ji_animated.png','w_button_ji.png','fonts/FiraSans-Bold.ttf','fonts/HappyMonkey-Regular.ttf','fonts/LuckiestGuy-Regular.ttf','fonts/VarelaRound-Regular.ttf']
+assets = ['bgimg.png','404.gif','cancel.png','del.gif','delete.gif','delete.png','eye.png','fs.jpeg','github.png','gmail.png','hanging_spider.png','i-cursor.png','idea.gif','internet.gif','leftji.png','main_logo_webber.png','man.gif','meditation.gif','mouse.png','mouse2.png','pause.png','play.png','rocket_icon.png','sad.gif','slack.png','some_catie.gif','spider_logo_main.png','spider.png','ss.png','success.gif','tick.png','w_button_ji_animated.png','w_button_ji.png','fonts/FiraSans-Bold.ttf','fonts/HappyMonkey-Regular.ttf','fonts/LuckiestGuy-Regular.ttf','fonts/VarelaRound-Regular.ttf']
 
 pygame.init()
-fontp = pygame.font.Font(None,24)
+fontp = pygame.font.Font(None,60)
 img = pygame.image.load(os.path.join(BASE,"assets/bgimg.png"))
 screen = pygame.display.set_mode((1000, 667))
 clock = pygame.time.Clock()
 screen.blit(img,(0,0))
 bh = fontp.render("Loading Assets ...", True, (255, 255, 255))
-screen.blit(bh, (10,10))
+screen.blit(bh, (350,300))
 pygame.display.set_caption("Webber")
 pygame.display.update()
 
@@ -263,7 +267,7 @@ try:
 except EOFError:
     pass  # All frames loaded
 
-gif4 = Image.open(os.path.join(BASE,"assets/cancel.gif"))
+gif4 = Image.open(os.path.join(BASE,"assets/404.gif"))
 frames4 = []
 try:
     while True:
@@ -567,6 +571,9 @@ def read_logs(hash):
                         websites[hash][2].append([obj1, [120, websites[hash][2][-1][1][1]+30]])
                     websites[hash][2].append([obj, [120, websites[hash][2][-1][1][1]+30]])
                     websites[hash][2].append([obj2, [120, websites[hash][2][-1][1][1]+30]])
+                    cached_log_renderers.append([obj1, [120, cached_log_renderers[-1][1][1]-30]])
+                    cached_log_renderers.append([obj, [120, cached_log_renderers[-1][1][1]+30]])
+                    cached_log_renderers.append([obj2, [120, cached_log_renderers[-1][1][1]+30]])
                     for i in websites[hash][2]:
                         i[1][1] -= 90
                     websites[hash][9] = True
@@ -616,8 +623,11 @@ def read_logs(hash):
                         websites[hash][2].append([obj1, [120, websites[hash][2][-1][1][1]+30]])
                     websites[hash][2].append([obj, [120, websites[hash][2][-1][1][1]+30]])
                     websites[hash][2].append([obj2, [120, websites[hash][2][-1][1][1]+30]])
+                    cached_log_renderers.append([obj1, [120, cached_log_renderers[-1][1][1]-30]])
+                    cached_log_renderers.append([obj, [120, cached_log_renderers[-1][1][1]+30]])
+                    cached_log_renderers.append([obj2, [120, cached_log_renderers[-1][1][1]+30]])
                     for i in websites[hash][2]:
-                        i[1][1] -= 90
+                        i[1][1] -= 30
                     websites[hash][9] = True
                     
                     website_being_downloaded = None
@@ -713,7 +723,10 @@ update_list(True)
 
 
 def run_process_man(url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages):
-    script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'website.py')
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'website.py'))
+    else:
+        script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'src/website.py'))
     process_ji = subprocess.Popen(['python', script_path, url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages],stdout=subprocess.PIPE,creationflags=subprocess.CREATE_NO_WINDOW)
     websites[eval(hash)][4] = process_ji
     websites[eval(hash)][8] = threading.Thread(target=read_logs,args=(eval(hash),),daemon=True)
@@ -1044,12 +1057,12 @@ def page_three():
             screen.blit(play, [537+125, 530])
         else:
             screen.blit(pause, [537+125, 530])
-        djboi = font6.render(f"In case the logs freeze for logs,", True, (255,255,255))
+        djboi = font6.render(f"In case the logs freeze,", True, (255,255,255))
         djboi1 = font6.render(f"you can pause & resume", True, (255,255,255))
         djboi2 = font6.render(f"Though this rarely happens !!", True, (255,255,255))
-        screen.blit(djboi, (rect_play_pause.x-30, rect_play_pause.y+55))
-        screen.blit(djboi1, (rect_play_pause.x-30, rect_play_pause.y+80))
-        screen.blit(djboi2, (rect_play_pause.x-30, rect_play_pause.y+105))
+        screen.blit(djboi, (rect_play_pause.x-10, rect_play_pause.y+55))
+        screen.blit(djboi1, (rect_play_pause.x-10, rect_play_pause.y+80))
+        screen.blit(djboi2, (rect_play_pause.x-10, rect_play_pause.y+105))
         pygame.draw.rect(screen, (210, 4, 45), rect_cancel, border_radius=12)
         pygame.draw.rect(screen, (0,0,0), rect_cancel,4, border_radius=12)
         b = font3.render("Cancel",True,cancel_color) #NAME
@@ -1504,8 +1517,11 @@ while True:
                                         dothat = False
                                         break
                                 if dothat:
-                                    script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'webview_launch.py')
-                                    process = subprocess.Popen(['python', script_path,"../" + j[-2]['file_location'],f'Webber - {j[-2]['hash']}'],creationflags=subprocess.CREATE_NO_WINDOW)
+                                    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                                        script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'webview_launch.py'))
+                                    else:
+                                        script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'src/webview_launch.py'))
+                                    process = subprocess.Popen(['python', script_path, j[-2]['file_location'],f'Webber - {j[-2]['hash']}'],creationflags=subprocess.CREATE_NO_WINDOW)
                                     total_lists[j[-2]['hash']] = ([j[-2]['file_location'],process])
                                     clicked.append(j[-2]['hash'])
                                     pygame.draw.rect(screen, (211, 214, 219), (i[0]+685,i[1]+14, 180, 50), border_radius=12)
@@ -1586,7 +1602,7 @@ while True:
                             page_num = 5
                             change_the_page = True
                             completed.append(j[7]['hash'])
-                            pygame.time.set_timer(DELETE_IT,2000, loops=1)
+                            pygame.time.set_timer(DELETE_IT,500, loops=1)
                     dosa_num = 0
                     for dosa in websites:
                         if dosa not in completed:
@@ -1625,8 +1641,19 @@ while True:
                                             websites[dosa][7] = False
                                             some_thread_result[websites[dosa][0]['hash']] = [{},{}]
                                         else:
-                                            djboi = font6.render(f"Max {MAX_WEBSITES} scrapes at a time !", True, (255,255,255))
-                                            screen.blit(djboi, (dosa_location[0]+133, dosa_location[1]+85, dosa_location[2], dosa_location[3]))
+                                            obj1 = font.render("="*40, True, (245,176,39))
+                                            djboi = font6.render(f"Max {MAX_WEBSITES} scrapes at a time !", True, (245,176,39))
+                                            obj2 = font.render("="*40, True, (245,176,39))
+                                            screen.blit(djboi, (rect_play_pause.x, rect_play_pause.y+50))
+                                            websites[dosa][9] = True
+                                            if len(websites[dosa][2])==0:
+                                                websites[dosa][2].append([obj1,[120, 450]])
+                                            else:
+                                                websites[dosa][2].append([obj1, [120, websites[dosa][2][-1][1][1]+30]])
+                                            websites[dosa][2].append([djboi, [120, websites[dosa][2][-1][1][1]+30]])
+                                            websites[dosa][2].append([obj2, [120, websites[dosa][2][-1][1][1]+30]])
+                                            for i in websites[dosa][2]:
+                                                i[1][1] -= 90
                                     else:
                                         websites[dosa][3] = 0
                                         if websites[dosa][4] and not websites[dosa][4].poll():
@@ -1695,13 +1722,11 @@ while True:
                                         websites[dosa][2].append([obj1, [120, websites[dosa][2][-1][1][1]+30]])
                                     websites[dosa][2].append([obj, [120, websites[dosa][2][-1][1][1]+30]])
                                     websites[dosa][2].append([obj2, [120, websites[dosa][2][-1][1][1]+30]])
-                                    cached_log_renderers.append([obj1, [120, cached_log_renderers[-1][1][1]+30]])
+                                    cached_log_renderers.append([obj1, [120, cached_log_renderers[-1][1][1]-30]])
                                     cached_log_renderers.append([obj, [120, cached_log_renderers[-1][1][1]+30]])
                                     cached_log_renderers.append([obj2, [120, cached_log_renderers[-1][1][1]+30]])
-                                    for i in cached_log_renderers:
-                                        i[1][1] -= 30
                                     for i in websites[dosa][2]:
-                                        i[1][1] -= 30
+                                        i[1][1] -= 90
                                     websites[dosa][9] = True
                                     completed.append(dosa)
                                     recalculate()
@@ -1767,12 +1792,6 @@ while True:
                         pygame.mouse.set_cursor(nw_mouse2)
                 else:
                     set_cursor_back3 = True
-            else:
-                if circle_rectl.collidepoint(pos):
-                    set_cursor_back3 = False
-                    pygame.mouse.set_cursor(nw_mouse2)
-                else:
-                    set_cursor_back3 = True
         # success, cancel & sad
         if website_being_downloaded:
             screen.blit(frames[frame_num], (420, 503))
@@ -1783,6 +1802,9 @@ while True:
             screen.blit(frames3[frame_num3], (420, 503))
             pygame.display.update()
             frame_num3 = (frame_num3 + 1) % len(frames3)
+            pygame.draw.rect(screen, (44, 42, 49), [220-125+4, -22, 560+250-8, 280+70+25+150-4], border_radius=20)
+            for i in cached_log_renderers:
+                screen.blit(i[0],i[1])
         elif cached_name_for_website2 and eval(cached_name_for_website2) in fail_paji:
             if no_internet:
                 pygame.draw.rect(screen, (44, 42, 49), [220-125, -22, 560+250, 280+70+25+150], border_radius=20)
@@ -1798,9 +1820,15 @@ while True:
                 frame_num6 = (frame_num6 + 1) % len(frames6)
         else:
             pygame.draw.rect(screen, (234, 111, 0), (420, 503, 180, 150))
-            screen.blit(frames4[frame_num4], (360, 56))
+            screen.blit(frames4[frame_num4], (420, 503))
             pygame.display.update()
             frame_num4 = (frame_num4 + 1) % len(frames4)
+        
+        if circle_rectl.collidepoint(pos):
+            set_cursor_back3 = False
+            pygame.mouse.set_cursor(nw_mouse2)
+        else:
+            set_cursor_back3 = True
 
         if set_cursor_back3:
             pygame.mouse.set_cursor(nw_mouse)
@@ -1843,7 +1871,7 @@ while True:
                                     websites[website_being_downloaded][2].append([obj1,[120, 450]])
                                 else:
                                     websites[website_being_downloaded][2].append([obj1, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
-                                websites[website_being_downloaded][2].append([obj, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
+                                websites[website_being_downloaded][2].append([djboi, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
                                 websites[website_being_downloaded][2].append([obj2, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
                                 for i in websites[website_being_downloaded][2]:
                                     i[1][1] -= 90
@@ -1913,13 +1941,11 @@ while True:
                             websites[website_being_downloaded][2].append([obj1, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
                         websites[website_being_downloaded][2].append([obj, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
                         websites[website_being_downloaded][2].append([obj2, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
-                        cached_log_renderers.append([obj1, [120, cached_log_renderers[-1][1][1]+30]])
+                        cached_log_renderers.append([obj1, [120, cached_log_renderers[-1][1][1]-30]])
                         cached_log_renderers.append([obj, [120, cached_log_renderers[-1][1][1]+30]])
                         cached_log_renderers.append([obj2, [120, cached_log_renderers[-1][1][1]+30]])
-                        for i in cached_log_renderers:
-                            i[1][1] -= 30
                         for i in websites[website_being_downloaded][2]:
-                            i[1][1] -= 30
+                            i[1][1] -= 90
                         websites[website_being_downloaded][9] = True
                         completed.append(website_being_downloaded)
                         website_being_downloaded = None
@@ -2005,7 +2031,10 @@ while True:
                 websites_currently_in_process += 1
                 recalculate()
                 hashy = random.randint(500000,2000000)
-                script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'website.py')
+                if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                    script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'website.py'))
+                else:
+                    script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'src/website.py'))
                 process_man = subprocess.Popen(['python', script_path,textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),storage_location+str(hashy),'True','True',str(refetch_enabled),str(max_threads),str(hashy),'{}','{}'],stdout=subprocess.PIPE,creationflags=subprocess.CREATE_NO_WINDOW)
                 website_being_downloaded = hashy
                 urlji = urllib.parse.quote(textinput.value.replace("\\","/"), safe=":/()=-$#';\\`~!@%,.^&+={}[]")
@@ -2031,7 +2060,7 @@ while True:
                     "logs": [],
                     "hash": hashy,
                     "completed": False,
-                    'file_location': os.path.join(os.path.join(storage_location+str(hashy), str(boi_url.hostname)),'index.html')
+                    'file_location': os.path.abspath(os.path.join(os.path.join(storage_location+str(hashy), str(boi_url.hostname)),'index.html'))
                 }, [], [], None, process_man, False, False, False, threading.Thread(target=read_logs,args=(hashy,), daemon=True), False]
                 some_thread_result[hashy] = [{},{}]
                 websites[website_being_downloaded][8].start()
@@ -2056,7 +2085,7 @@ while True:
                 # print(f"Download called for {textinput.value}")
  
 
-    elif page_num ==  5:
+    elif page_num == 5:
         screen.fill((255, 255, 255))
         screen.blit(img, rect)
         screen.blit(frames5[frame_num5], (260, 146))
@@ -2157,8 +2186,8 @@ while True:
             if quitting_not_started:
                 quitting_not_started = False
                 screen.blit(img,(0,0))
-                bh = font.render("Exiting safely ...", True, (255, 255, 255))
-                screen.blit(bh, (10,10))
+                bh = fontp.render("Exiting safely ...", True, (255, 255, 255))
+                screen.blit(bh, (350,300))
                 pygame.display.update()
                 for jjman in websites.copy():
                     if jjman not in completed:
@@ -2216,4 +2245,4 @@ while True:
                     break
             
     pygame.display.update()
-    clock.tick(60)
+    clock.tick(40)
