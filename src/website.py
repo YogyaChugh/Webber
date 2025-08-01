@@ -1,4 +1,5 @@
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse
+import urllib.error
 import exceptions
 import shutil
 import os
@@ -11,6 +12,15 @@ import traceback
 import sys
 import magic
 from webpage import *
+
+
+def remove_unnecessary(url):
+    a = urlparse(url)
+    aa = str(a.scheme) + "://" if a.scheme else ""
+    b = str(a.hostname) + "/" if a.hostname else ""
+    c = str(a.path)
+    return os.path.join(aa, b, c)
+
 # from concurrent.futures import ThreadPoolExecutor, wait
 
 # executor = ThreadPoolExecutor(max_workers=3)
@@ -74,10 +84,12 @@ class Website:
     completed = False
     hash = ""
     ab = 0
+    max_threads = 50
+    sema = None
 
     def __init__(self,settings):
         # Frequently used ones stored !
-        urlji = urllib.parse.quote(settings.get('url').replace("\\","/"), safe=":/")
+        urlji = urllib.parse.quote(settings.get('url').replace("\\","/"), safe=":/()=-$#';\\`~!@%,.^&+={}[]")
         atempo = urlparse(urlji)
         if str(atempo.scheme).strip() == "":
             urlji = "https://" + urlji
@@ -89,6 +101,8 @@ class Website:
         self.refetch = settings.get("refetch") # Whether to avoid using cached urls or not !
         self.base_file = Webpage(self.url, self, "text/html", settings.get('same_origin_deviation'), settings.get('max_cors'), self.url.geturl(), None, settings.get('download_res'), settings.get('download_cors_res'))
 
+        self.max_threads = settings.get('max_threads')
+        self.sema = threading.Semaphore(self.max_threads)
         self.index_file_location = os.path.join(self.location, str(self.url.hostname))
 
         self.settings = settings
@@ -131,6 +145,19 @@ class Website:
             return os.path.join(str(webpage.url.scheme)+ "://", str(webpage.url.hostname), url[1:])
         else:
             return os.path.join(str(self.url.scheme)+ "://", str(self.url.hostname), url[1:])
+        
+    def smart_urljoin(self, base, next):
+        a = str(base.path)
+        a = a.replace('\\','/')
+        b = os.path.dirname(a)
+        self.special.write(f'\nnext is given: {next} with base url as {base.geturl()} with dirname: {b} and hostname {str(base.hostname)}')
+        self.special.flush()
+        temp = str(base.scheme) + ("://" if base.scheme else "")+ str(base.hostname)
+        temp2 = os.path.join(b, next).replace("\\",'/')
+        if temp2.startswith('/'):
+            return (temp+temp2).replace("\\",'/')
+        else:
+            return (temp+'/'+temp2).replace("\\",'/')
 
     def download(self):
         """Downloads a complete website based on the settings passed while construction.
@@ -148,7 +175,9 @@ class Website:
         # temp_event.set()
         # threading.Thread(target=loading_animation.load_animation, args=(["CLIMBING MT.EVEREST TO FETCH YOUR WEBSITE ","FIGHTING THE DEVILS TO PREVENT COPYRIGHT  ","GOING TO MARS FOR FASTER INTERNET SPEEEED ","ASKING YOUR CRUSH FOR APPROVAL # FETCHING "], temp_event)).start()
         # print(f"Thread started for {self.url.geturl()}")
-        self.download_webpage(self.base_file)
+        doc = StoppableThread(target=self.download_webpage, args=(self.base_file,))
+        doc.start()
+        doc.join()
         if not self.stopped:
             for i in self.threads.copy():
                 try:
@@ -184,252 +213,267 @@ class Website:
         self.completed = True
     
     def download_webpage(self,web_page):
-        # print(f'FOR {web_page.url.geturl()}')
-        # print('wtf')
-        try:
-            if self.stopped:
-                # print('it was stopped')
-                return
-            # print('wtf part 2')
-            self.logs.append(f"Downloading Webpage: {web_page.url.geturl()}")
-            print(f"$@Downloading Webpage: {web_page.url.geturl()}$@", flush=True)
-            self.special.write(f"Downloading Webpage: {web_page.url.geturl()}")
-            self.special.flush()
-            # print(f'CALLED FOR {web_page.url.geturl()}')
-            # print("jojo")
-            ppp = web_page.create_offline_location(web_page.url, web_page.file_type,True)
-            # print("joko")
-            if not self.settings.get('refetch') and os.path.exists(os.path.join(ppp[0], ppp[1])):
-                self.webpages_scraped[web_page.prev_link] = (web_page, False, True)
-                return
-            done = False
-            temp_threads = []
-            # print('no issue before download()')
-            web_page.download()
-            web_page.save_file(ppp[0], ppp[1], web_page.content, web_page.file_type)
-            gg = StoppableThread(target=web_page.download)
-            gg.start()
-            temp_threads.append(gg)
-            self.other_threads.append(gg)
-            # gg.join()
-            # temp_threads.remove(gg)
-            # self.other_threads.remove(gg)
-            # print('thread issue ??')
-            self.webpages_scraped[web_page.prev_link] = (web_page, True, False)
-            if web_page.content:
-                done = True
-                urls = web_page.find_urls(web_page.content)
-                if not self.stopped:
-                    for url in urls:
-                        if self.stopped:
-                            return
-                        # print(f'Thread started for {url}')
-                        t = StoppableThread(target=self.check_and_call, args=(web_page,url))
-                        t.start()
-                        temp_threads.append(t)
-                        self.other_threads.append(t)
-                        # t.join()
-                        # temp_threads.remove(t)
-                        # self.other_threads.remove(t)
-                else:
-                    return
-
-            # print("success: ",success)
-            # sys.exit()
-            # print('reached here')
-            if not done:
-                temp_threads[-1].join()
-                temp_threads = []
-                urls = web_page.find_urls(web_page.content)
-                if not self.stopped:
-                    for url in urls:
-                        if self.stopped:
-                            return
-                        # print(f'Thread started for {url}')
-                        t = StoppableThread(target=self.check_and_call,args=(web_page, url))
-                        t.start()
-                        temp_threads.append(t)
-                        self.other_threads.append(t)
-                        # t.join()
-                        # temp_threads.remove(t)
-                        # self.other_threads.remove(t)
-                    
-            for t in temp_threads:
-                t.join()
-                self.other_threads.remove(t)
-                
-            for i in web_page.children:
-                # print('Replaced ',i[0],' with ',i[1])
-                web_page.content = web_page.content.replace(i[0], i[1])
-                
-            web_page.save_file(ppp[0], ppp[1], web_page.content, web_page.file_type)
-            self.logs.append(f"Download Success | {web_page.url.geturl()} |")
-            print(f"$@Download Success | {web_page.url.geturl()} |$@", flush=True)
-            self.special.write(f"Download Success | {web_page.url.geturl()} |")
-            self.special.flush()
-            self.ab -= 1
-
-        except Exception as e:
-            # print('problem')
-            self.ab -= 1
-            self.logs.append(f"Download Failed | {web_page.url.geturl()} |")
-            print(f"$@Download Failed | {web_page.url.geturl()} |$@", flush=True)
-            self.special.write(f"Download Failed | {web_page.url.geturl()} |")
-            self.special.flush()
-            self.webpages_scraped[web_page.prev_link] = (web_page, False, False)
-            if self.settings.get('maintain_logs'):
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                if exc_type and exc_value:
-                    tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
-                    exception_string = ''.join(tb.format())
-                else:
-                    exception_string = f"Error: {e.args[0]} \nExtra: Couldn't traceback"
-                self.logger.write(f"\n\nDownload Failed | {web_page.url.geturl()} |\n\n")
-                self.logger.write(f"Error: {exception_string}")
-                self.logger.flush()
-                # print(exception_string)
-            if isinstance(e, exceptions.NoInternetConnection):
-                print("$@No Internet Connection !!$@", flush=True)
-                
-    def check_and_call(self, web_page, url):
-        try:
-            if self.stopped:
-                return
-            to_be_done = True
-            if url in self.resources_downloaded:
-                temp = self.resources_downloaded.get(url)
-                if temp and temp[2]:
-                    # print(f"Skipped | {url} |")
-                    to_be_done = False
-                    file_path = os.path.join(web_page.file_location, web_page.fileName)
-                    
-                    web_page.children.append([url, os.path.relpath(temp[4], web_page.file_location).replace("\\","/")])
-                    # print(f'Sending 1 {url} to {os.path.relpath(temp[4], web_page.file_location).replace("\\","/")}')
-                    self.logs.append(f"Resource Download Success | {url} |")
-                    print(f"$@Resource Download Success | {url} |$@", flush=True)
-                    self.special.write(f"Resource Download Success | {url} |")
-                    self.special.flush()
-            if self.stopped:
-                return
-            if to_be_done:
-                # print(f'GOING FOR {url}')
-                new_url = self.correct_url(url, web_page)
-                new_url = new_url.replace("\\","/")
-                url_requested = urllib.parse.quote(new_url, safe=":/")
-                try:
-                    content = download_resource_safe(url_requested)
-                except Exception:
-                    try:
-                        content = download_resource_safe("https://www.example.com")
-                    except Exception:
-                        raise exceptions.NoInternetConnection()
-                    raise exceptions.FileDownloadError(url)
-                with open("data/file_types.json","r") as f:
-                    mimes = json.load(f)
-                    mimes = mimes['mime_types']
-                redo = False
-                type_file = None
-                try:
-                    type_file = magic.from_buffer(content, mime=True)
-                except:
-                    redo = True
-                if redo or type_file == 'text/plain':
-                    types_man = os.environ.get('file_types', '[]')
-                    if types_man:
-                        file_types=eval(types_man)
-                        for file_type in file_types:
-                            bobby = new_url[(len(new_url) - len(file_type)):].lower()
-                            if file_type.lower() == bobby:
-                                type_file = file_types[file_type].lower()
-                temporary_made_url = urlparse(new_url)
+        with self.sema:
+            # print(f'FOR {web_page.url.geturl()}')
+            # print('wtf')
+            try:
                 if self.stopped:
+                    # print('it was stopped')
                     return
-                if type_file in ['text/html','text/css','text/javascript','text/plain','text/xhtml','text/xml']:
-                    # print(f'THIS IS A WEBPAGE | {url} |')
-                    content = content.decode("utf-8")
-                    if type_file == "text/html":
-                        content = BeautifulSoup(content, features="html5lib").prettify()
-                    elif type_file == "text/css":
-                        content = str(cssbeautifier.beautify(content))
-                    elif type_file == "text/javascript":
-                        content = str(jsbeautifier.beautify(content))
-                    elif type_file == "text/xml" or type_file == "text/xhtml":
-                        content = BeautifulSoup(content, features="xml").prettify()
-                        
-                    if web_page.url.hostname == temporary_made_url.hostname and web_page.same_origin_deviation>0:
-                        temp = Webpage(temporary_made_url, self, type_file, web_page.same_origin_deviation-1, web_page.cors_level, url, content, web_page.download_res, web_page.download_cors_res)
-                    elif web_page.url.hostname != temporary_made_url.hostname and web_page.cors and web_page.cors_level>0:
-                        temp = Webpage(temporary_made_url, self, type_file, 0, web_page.cors_level - 1, url, content, self.settings.get('cors_download_res'), self.settings.get('cors_download_cors_res'))
+                # print('wtf part 2')
+                self.logs.append(f"Downloading Webpage: {web_page.url.geturl()}")
+                print(f"$@Downloading Webpage: {web_page.url.geturl()}$@", flush=True)
+                self.special.write(f"Downloading Webpage: {web_page.url.geturl()}")
+                self.special.flush()
+                # print(f'CALLED FOR {web_page.url.geturl()}')
+                # print("jojo")
+                ppp = web_page.create_offline_location(web_page.url, web_page.file_type,True)
+                # print("joko")
+                if not self.settings.get('refetch') and os.path.exists(os.path.join(ppp[0], ppp[1])):
+                    self.webpages_scraped[web_page.prev_link] = (web_page, False, True)
+                    return
+                done = False
+                temp_threads = []
+                # print('no issue before download()')
+                web_page.download()
+                web_page.save_file(ppp[0], ppp[1], web_page.content, web_page.file_type)
+                gg = StoppableThread(target=web_page.download)
+                gg.start()
+                temp_threads.append(gg)
+                self.other_threads.append(gg)
+                # gg.join()
+                # temp_threads.remove(gg)
+                # self.other_threads.remove(gg)
+                # print('thread issue ??')
+                self.webpages_scraped[web_page.prev_link] = (web_page, True, False)
+                if web_page.content:
+                    done = True
+                    urls = web_page.find_urls(web_page.content)
+                    if not self.stopped:
+                        for url in urls:
+                            if self.stopped:
+                                return
+                            # print(f'Thread started for {url}')
+                            t = StoppableThread(target=self.check_and_call, args=(web_page,url))
+                            t.start()
+                            temp_threads.append(t)
+                            self.other_threads.append(t)
+                            # t.join()
+                            # temp_threads.remove(t)
+                            # self.other_threads.remove(t)
                     else:
                         return
-                    temp2 = self.webpages_scraped.get(url)
-                    if self.stopped:
-                        return
-                    if temp2 and temp==temp2[0]:
-                        if temp2[1] or temp2[2]:
-                            web_page.children.append([url, os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")])
-                            # print(f'Sending 2 {url} to {os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")}')
-                            return
-                    self.webpages_scraped[url] = (temp, True, False)
-                    t = StoppableThread(target=self.download_webpage,args=(temp,))
-                    t.start()
-                    self.download_webpage(temp)
-                    some = temp.create_offline_location(temp.url, type_file, True)
-                    web_page.children.append([url,os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location)])
-                    # print(f'Sending 3 {url} to {os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location)}')
-                    # print(f'THREAD | {url} |')
-                    self.threads.append((url, t))
-                    # print(f"Success started for {url}")
-                    if self.settings.get('maintain_logs'):
-                        self.logger.write(f"\n\nDownloading Webpage | {new_url} |")
-                        self.logger.flush()
-                else:
-                    if ((web_page.url.hostname == temporary_made_url.hostname or self.url.hostname == temporary_made_url.hostname) and web_page.download_res) or (web_page.url.hostname!=temporary_made_url.hostname and self.url.hostname!=temporary_made_url.hostname and web_page.download_cors_res):
-                        if self.settings.get('maintain_logs'):
-                            self.logger.write(f"\n\nDownloading Resource | {new_url} |")
-                            self.logger.flush()
-                        self.resources_downloaded[url] = (new_url, True, False, type_file, None)
-                        temp_location = os.path.join(web_page.file_location, web_page.fileName)
-                        a_temp = web_page.download_resource(new_url, type_file, content)
-                        location, file_name = web_page.create_offline_location(temporary_made_url, type_file)
-                        if self.stopped:
-                            return
-                        try:
-                            web_page.save_file(location, file_name, a_temp.get('file_content'), a_temp.get('file_type'))
-                            self.resources_downloaded[url] = (new_url, False, True, type_file, os.path.join(location, file_name))
-                        except:
-                            self.resources_downloaded[url] = (new_url, False, False, type_file, os.path.join(location, file_name))
+
+                # print("success: ",success)
+                # sys.exit()
+                # print('reached here')
+                if not done:
+                    temp_threads[-1].join()
+                    temp_threads = []
+                    urls = web_page.find_urls(web_page.content)
+                    if not self.stopped:
+                        for url in urls:
+                            if self.stopped:
+                                return
+                            # print(f'Thread started for {url}')
+                            t = StoppableThread(target=self.check_and_call,args=(web_page, url))
+                            t.start()
+                            temp_threads.append(t)
+                            self.other_threads.append(t)
+                            # t.join()
+                            # temp_threads.remove(t)
+                            # self.other_threads.remove(t)
+
+                for t in temp_threads:
+                    t.join()
+                    self.other_threads.remove(t)
+
+                for i in web_page.children:
+                    # print('Replaced ',i[0],' with ',i[1])
+                    web_page.content = web_page.content.replace(i[0], i[1])
+
+                web_page.save_file(ppp[0], ppp[1], web_page.content, web_page.file_type)
+                self.logs.append(f"Download Success | {web_page.url.geturl()} |")
+                print(f"$@Download Success | {web_page.url.geturl()} |$@", flush=True)
+                self.special.write(f"Download Success | {web_page.url.geturl()} |")
+                self.special.flush()
+                self.ab -= 1
+
+            except Exception as e:
+                # print('problem')
+                self.ab -= 1
+                self.logs.append(f"Download Failed | {web_page.url.geturl()} |")
+                if not isinstance(e, urllib.error.HTTPError) and not e.code == 404:
+                    print(f"$@Download Failed | {web_page.url.geturl()} |$@", flush=True)
+                self.special.write(f"Download Failed | {web_page.url.geturl()} |")
+                self.special.flush()
+                self.webpages_scraped[web_page.prev_link] = (web_page, False, False)
+                if self.settings.get('maintain_logs'):
+                    exc_type, exc_value, exc_tb = sys.exc_info()
+                    if exc_type and exc_value:
+                        tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
+                        exception_string = ''.join(tb.format())
+                    else:
+                        exception_string = f"Error: {e.args[0]} \nExtra: Couldn't traceback"
+                    self.logger.write(f"\n\nDownload Failed | {web_page.url.geturl()} |\n\n")
+                    self.logger.write(f"Error: {exception_string}")
+                    self.logger.flush()
+                    # print(exception_string)
+                if isinstance(e, exceptions.NoInternetConnection):
+                    print("$@No Internet Connection !!$@", flush=True)
+                
+    def check_and_call(self, web_page, url, main=True, last_try=False):
+        with self.sema:
+            url = remove_unnecessary(url)
+            url2 = self.smart_urljoin(web_page.url, url)
+            url3 = None
+            if main:
+                url3 = self.smart_urljoin(self.url, url)
+            # print('New: ',url2)
+            self.special.write(f'\nNEW: {url2}')
+            self.special.flush()
+            try:
+                if self.stopped:
+                    return
+                to_be_done = True
+                if url in self.resources_downloaded:
+                    temp = self.resources_downloaded.get(url)
+                    if temp and temp[2]:
+                        # print(f"Skipped | {url} |")
+                        to_be_done = False
+                        file_path = os.path.join(web_page.file_location, web_page.fileName)
                         
-                        web_page.children.append([url, os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/")])
-                        # print(f'Sending 4 {url} to {os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/")}')
-                                
-                        if self.settings.get('maintain_logs'):
-                            self.logger.write(f"\n\nDownload Complete | {new_url} |")
-                            self.logger.flush()
+                        web_page.children.append([url, os.path.relpath(temp[4], web_page.file_location).replace("\\","/")])
+                        # print(f'Sending 1 {url} to {os.path.relpath(temp[4], web_page.file_location).replace("\\","/")}')
                         self.logs.append(f"Resource Download Success | {url} |")
                         print(f"$@Resource Download Success | {url} |$@", flush=True)
                         self.special.write(f"Resource Download Success | {url} |")
                         self.special.flush()
+                if self.stopped:
+                    return
+                if to_be_done:
+                    # print(f'GOING FOR {url}')
+                    new_url = self.correct_url(url2, web_page)
+                    new_url = new_url.replace("\\","/")
+                    url_requested = urllib.parse.quote(new_url, safe=":/()=-$#';\\`~!@%,.^&+={}[]")
+                    try:
+                        content = download_resource_safe(url_requested)
+                    except Exception:
+                        try:
+                            content = download_resource_safe("https://www.example.com")
+                        except Exception:
+                            raise exceptions.NoInternetConnection()
+                        raise exceptions.FileDownloadError(url)
+                    with open("data/file_types.json","r") as f:
+                        mimes = json.load(f)
+                        mimes = mimes['mime_types']
+                    redo = False
+                    type_file = None
+                    try:
+                        type_file = magic.from_buffer(content, mime=True)
+                    except:
+                        redo = True
+                    if redo or type_file == 'text/plain':
+                        types_man = os.environ.get('file_types', '[]')
+                        if types_man:
+                            file_types=eval(types_man)
+                            for file_type in file_types:
+                                bobby = new_url[(len(new_url) - len(file_type)):].lower()
+                                if file_type.lower() == bobby:
+                                    type_file = file_types[file_type].lower()
+                    temporary_made_url = urlparse(new_url)
+                    if self.stopped:
+                        return
+                    if type_file in ['text/html','text/css','text/javascript','text/plain','text/xhtml','text/xml']:
+                        # print(f'THIS IS A WEBPAGE | {url} |')
+                        content = content.decode("utf-8")
+                        if type_file == "text/html":
+                            content = BeautifulSoup(content, features="html5lib").prettify()
+                        elif type_file == "text/css":
+                            content = str(cssbeautifier.beautify(content))
+                        elif type_file == "text/javascript":
+                            content = str(jsbeautifier.beautify(content))
+                        elif type_file == "text/xml" or type_file == "text/xhtml":
+                            content = BeautifulSoup(content, features="xml").prettify()
+                            
+                        if web_page.url.hostname == temporary_made_url.hostname and web_page.same_origin_deviation>0:
+                            temp = Webpage(temporary_made_url, self, type_file, web_page.same_origin_deviation-1, web_page.cors_level, url, content, web_page.download_res, web_page.download_cors_res)
+                        elif web_page.url.hostname != temporary_made_url.hostname and web_page.cors and web_page.cors_level>0:
+                            temp = Webpage(temporary_made_url, self, type_file, 0, web_page.cors_level - 1, url, content, self.settings.get('cors_download_res'), self.settings.get('cors_download_cors_res'))
+                        else:
+                            return
+                        temp2 = self.webpages_scraped.get(url)
+                        if self.stopped:
+                            return
+                        if temp2 and temp==temp2[0]:
+                            if temp2[1] or temp2[2]:
+                                web_page.children.append([url, os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")])
+                                # print(f'Sending 2 {url} to {os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")}')
+                                return
+                        self.webpages_scraped[url] = (temp, True, False)
+                        t = StoppableThread(target=self.download_webpage,args=(temp,))
+                        t.start()
+                        self.download_webpage(temp)
+                        some = temp.create_offline_location(temp.url, type_file, True)
+                        web_page.children.append([url,os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location)])
+                        # print(f'Sending 3 {url} to {os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location)}')
+                        # print(f'THREAD | {url} |')
+                        self.threads.append((url, t))
+                        # print(f"Success started for {url}")
+                        if self.settings.get('maintain_logs'):
+                            self.logger.write(f"\n\nDownloading Webpage | {new_url} |")
+                            self.logger.flush()
                     else:
-                        pass
-                        # print(f"Skipped {url}")
-                        # print(f"CORS RES: {web_page.download_cors_res}")
-        except Exception as e:
-            self.logs.append(f"Resource Download Failed | {url} |")
-            print(f"$@Resource Download Failed | {url} |$@", flush=True)
-            self.special.write(f"Resource Download Failed | {url} |")
-            self.special.flush()
-            if self.settings.get('maintain_logs'):
-                exc_type, exc_value, exc_tb = sys.exc_info()
-                if exc_type and exc_value:
-                    tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
-                    exception_string = ''.join(tb.format())
-                else:
-                    exception_string = f"Error: {e.args[0]} \nExtra: Couldn't traceback"
-                # print(f"Failed | {url} |")
-                self.logger.write(f"\n\nDownload Failed | {url} |\n\n")
-                self.logger.write(f"\nError: {exception_string}")
-                self.logger.flush()
+                        if ((web_page.url.hostname == temporary_made_url.hostname or self.url.hostname == temporary_made_url.hostname) and web_page.download_res) or (web_page.url.hostname!=temporary_made_url.hostname and self.url.hostname!=temporary_made_url.hostname and web_page.download_cors_res):
+                            if self.settings.get('maintain_logs'):
+                                self.logger.write(f"\n\nDownloading Resource | {new_url} |")
+                                self.logger.flush()
+                            self.resources_downloaded[url] = (new_url, True, False, type_file, None)
+                            temp_location = os.path.join(web_page.file_location, web_page.fileName)
+                            a_temp = web_page.download_resource(new_url, type_file, content)
+                            location, file_name = web_page.create_offline_location(temporary_made_url, type_file)
+                            if self.stopped:
+                                return
+                            try:
+                                web_page.save_file(location, file_name, a_temp.get('file_content'), a_temp.get('file_type'))
+                                self.resources_downloaded[url] = (new_url, False, True, type_file, os.path.join(location, file_name))
+                            except:
+                                self.resources_downloaded[url] = (new_url, False, False, type_file, os.path.join(location, file_name))
+                            
+                            web_page.children.append([url, os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/")])
+                            # print(f'Sending 4 {url} to {os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/")}')
+                                    
+                            if self.settings.get('maintain_logs'):
+                                self.logger.write(f"\n\nDownload Complete | {new_url} |")
+                                self.logger.flush()
+                            self.logs.append(f"Resource Download Success | {url} |")
+                            print(f"$@Resource Download Success | {url} |$@", flush=True)
+                            self.special.write(f"Resource Download Success | {url} |")
+                            self.special.flush()
+                        else:
+                            pass
+                            # print(f"Skipped {url}")
+                            # print(f"CORS RES: {web_page.download_cors_res}")
+            except Exception as e:
+                if main:
+                    self.check_and_call(web_page, url3, False)
+                if not main:
+                    self.logs.append(f"Resource Download Failed | {url} |")
+                    if not isinstance(e, urllib.error.HTTPError) and not e.code==404:
+                        print(f"$@Resource Download Failed | {url} |$@", flush=True)
+                    self.special.write(f"Resource Download Failed | {url} |")
+                    self.special.flush()
+                    if self.settings.get('maintain_logs'):
+                        exc_type, exc_value, exc_tb = sys.exc_info()
+                        if exc_type and exc_value:
+                            tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
+                            exception_string = ''.join(tb.format())
+                        else:
+                            exception_string = f"Error: {e.args[0]} \nExtra: Couldn't traceback"
+                        # print(f"Failed | {url} |")
+                        self.logger.write(f"\n\nDownload Failed | {url} |\n\n")
+                        self.logger.write(f"\nError: {exception_string}")
+                        self.logger.flush()
                 
     def cancel(self,delete_later=False):
         self.logger.write("Cancelled Scraping Website !")
@@ -540,10 +584,11 @@ if __name__ == "__main__":
         "maintain_logs": eval(sys.argv[10]),
         "show_failed_files": eval(sys.argv[11]),
         "refetch": eval(sys.argv[12]),
-        "hash": eval(sys.argv[13])
+        "hash": eval(sys.argv[13]),
+        "max_threads": eval(sys.argv[14])
     }
 
     a = Website(settings)
-    a.resources_downloaded = eval(sys.argv[14])
-    a.webpages_scraped = eval(sys.argv[15])
+    a.resources_downloaded = eval(sys.argv[15])
+    a.webpages_scraped = eval(sys.argv[16])
     a.download()

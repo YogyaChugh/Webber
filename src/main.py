@@ -69,6 +69,7 @@ font4 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 40
 font5 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 24)
 font6 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 18)
 font7 = pygame.font.Font(os.path.join(BASE,"assets/fonts/LuckiestGuy-Regular.ttf"), 50)
+font8 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 10)
 
 some_thread = {}
 some_thread_result = {}
@@ -382,6 +383,8 @@ cors_enabled = False
 resources_for_cors = False
 Max_cors = 0
 
+max_threads = 50
+
 op = 0
 t = 0
 loader = ['Loading','Loading .','Loading ..','Loading ...']
@@ -391,13 +394,14 @@ webviews_opened = {}
 rects = {
     'd_resource_rect' : pygame.Rect(650, 195, 30, 30),
     'd_c_resource_rect' : pygame.Rect(650, 250, 30, 30),
-    'refetch_rect' : pygame.Rect(650, 350, 30, 30),
     'cors_rect' : pygame.Rect(650, 410, 30, 30),
     'cors_resources' : pygame.Rect(435, 472, 25, 25),
     'left_max_cors' : pygame.Rect(565, 474, 30, 30),
     'right_max_cors' : pygame.Rect(630, 473, 30, 30),
     'left_socl': pygame.Rect(620, 300, 30, 30),
     'right_socl': pygame.Rect(685, 299, 30, 30),
+    'left_mt': pygame.Rect(616, 350, 30, 30),
+    'right_mt': pygame.Rect(689, 349, 30, 30),
     'go_on': pygame.Rect(723, 526, 60, 40)
 }
 
@@ -695,9 +699,9 @@ def update_list(main=False):
 update_list(True)
 
 
-def run_process_man(url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, resources, webpages):
+def run_process_man(url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages):
     script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'website.py')
-    process_ji = subprocess.Popen(['python', script_path, url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, resources, webpages],stdout=subprocess.PIPE)
+    process_ji = subprocess.Popen(['python', script_path, url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages],stdout=subprocess.PIPE,creationflags=subprocess.CREATE_NO_WINDOW)
     websites[eval(hash)][4] = process_ji
     websites[eval(hash)][8] = threading.Thread(target=read_logs,args=(eval(hash),),daemon=True)
     websites[eval(hash)][8].start()
@@ -868,7 +872,7 @@ def page_two():
 
 
 def page_four():
-    global download_resources_enabled, download_cors_resources_enabled, allow_options, same_origin_crawl_limit, refetch_enabled, cors_enabled, Max_cors, resources_for_cors
+    global download_resources_enabled, download_cors_resources_enabled, allow_options, same_origin_crawl_limit, refetch_enabled, cors_enabled, Max_cors, resources_for_cors, max_threads
     screen.fill((255, 255, 255))
     screen.blit(img, rect)
     pygame.draw.rect(screen, (47, 21, 68), [200, 83, 600, 500], border_radius=20)
@@ -918,14 +922,27 @@ def page_four():
     if allow_options:
         screen.blit(right, rects['right_socl'])
     # pygame.draw.rect(screen, (0, 0, 0), [650, 295, 30, 30], 4)
-    resources = font5.render("Refetch", True, (255,255,255))
-    screen.blit(resources, (270, 350))
+    resources = font5.render("Max Threads", True, (255,255,255))
+    screen.blit(resources, (270, 347))
+    special_info = font8.render("Change based on your PC's capabilities - Risky dude !", True, (255,255,255))
+    screen.blit(special_info, (270,380))
     if allow_options:
-        pygame.draw.rect(screen, (0, 0, 0), rects['refetch_rect'], 4)
-    elif not refetch_enabled:
-        screen.blit(cancel, (650, 350))
-    if refetch_enabled:
-        screen.blit(tick, (650, 341))
+        screen.blit(left, rects['left_mt'])
+    num = font5.render(str(max_threads), True , (255, 255, 255))
+    if len(str(max_threads))==3:
+        screen.blit(num, (647, 347))
+    elif len(str(max_threads))==2:
+        screen.blit(num, (651, 347))
+    else:
+        screen.blit(num, (655, 347))
+    if allow_options:
+        screen.blit(right, rects['right_mt'])
+    # if allow_options:
+    #     pygame.draw.rect(screen, (0, 0, 0), rects['refetch_rect'], 4)
+    # elif not refetch_enabled:
+    #     screen.blit(cancel, (650, 350))
+    # if refetch_enabled:
+    #     screen.blit(tick, (650, 341))
     
     
     pygame.draw.line(screen, (0,0,0), (250, 395), (748, 395),4)
@@ -1272,6 +1289,7 @@ while True:
                     cors_enabled = False
                     resources_for_cors = False
                     Max_cors = 0
+                    max_threads = 50
                     checking = website.StoppableThread(target=check_if_website_correct)
                     checking.start()
                 pygame.mouse.set_cursor(nw_mouse)
@@ -1465,7 +1483,7 @@ while True:
                                         break
                                 if dothat:
                                     script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'webview_launch.py')
-                                    process = subprocess.Popen(['python', script_path,"../" + j[-2]['file_location'],f'Webber - {j[-2]['hash']}'])
+                                    process = subprocess.Popen(['python', script_path,"../" + j[-2]['file_location'],f'Webber - {j[-2]['hash']}'],creationflags=subprocess.CREATE_NO_WINDOW)
                                     total_lists[j[-2]['hash']] = ([j[-2]['file_location'],process])
                                     clicked.append(j[-2]['hash'])
                                     pygame.draw.rect(screen, (211, 214, 219), (i[0]+685,i[1]+14, 180, 50), border_radius=12)
@@ -1516,6 +1534,7 @@ while True:
                             download_cors_resources_enabled = j[-2]['download_cors_res']
                             cors_enabled = j[-2]['cors']
                             Max_cors = j[-2]['max_cors']
+                            max_threads = j[-2]['max_threads']
                             resources_for_cors = j[-2]['cors_download_res']
                             same_origin_crawl_limit = j[-2]['same_origin_deviation']
                             page_num = 4
@@ -1558,6 +1577,7 @@ while True:
                                 download_cors_resources_enabled = websites[dosa][0]['download_cors_res']
                                 cors_enabled = websites[dosa][0]['cors']
                                 Max_cors = websites[dosa][0]['max_cors']
+                                max_threads = websites[dosa][0]['max_threads']
                                 resources_for_cors = websites[dosa][0]['cors_download_res']
                                 same_origin_crawl_limit = websites[dosa][0]['same_origin_deviation']
                                 page_num = 4
@@ -1573,9 +1593,9 @@ while True:
                                         resultp = some_thread_result.get(dosa)
                                         bbgip = websites[dosa][0]
                                         if resultp:
-                                            bhai = threading.Thread(target=run_process_man, args=(str(bbgip['url']), str(bbgip['download_res']), str(bbgip['download_cors_res']), str(bbgip['cors']), str(bbgip['cors_download_res']), str(bbgip['cors_download_cors_res']), str(bbgip['max_cors']), str(bbgip['same_origin_deviation']), str(bbgip['location']), str(bbgip['maintain_logs']), str(bbgip['show_failed_files']), str(bbgip['refetch']), str(bbgip['hash']), str(resultp[0]), str(resultp[1])))
+                                            bhai = threading.Thread(target=run_process_man, args=(str(bbgip['url']), str(bbgip['download_res']), str(bbgip['download_cors_res']), str(bbgip['cors']), str(bbgip['cors_download_res']), str(bbgip['cors_download_cors_res']), str(bbgip['max_cors']), str(bbgip['same_origin_deviation']), str(bbgip['location']), str(bbgip['maintain_logs']), str(bbgip['show_failed_files']), str(bbgip['refetch']), str(bbgip['hash']), str(bbgip['max_threads']), str(resultp[0]), str(resultp[1])))
                                         else:
-                                            bhai = threading.Thread(target=run_process_man, args=(str(bbgip['url']), str(bbgip['download_res']), str(bbgip['download_cors_res']), str(bbgip['cors']), str(bbgip['cors_download_res']), str(bbgip['cors_download_cors_res']), str(bbgip['max_cors']), str(bbgip['same_origin_deviation']), str(bbgip['location']), str(bbgip['maintain_logs']), str(bbgip['show_failed_files']), str(bbgip['refetch']), str(bbgip['hash']), '{}','{}'))
+                                            bhai = threading.Thread(target=run_process_man, args=(str(bbgip['url']), str(bbgip['download_res']), str(bbgip['download_cors_res']), str(bbgip['cors']), str(bbgip['cors_download_res']), str(bbgip['cors_download_cors_res']), str(bbgip['max_cors']), str(bbgip['same_origin_deviation']), str(bbgip['location']), str(bbgip['maintain_logs']), str(bbgip['show_failed_files']), str(bbgip['refetch']), str(bbgip['hash']), str(bbgip['max_threads']), '{}','{}'))
                                         bhai.start()
                                         websites[dosa][3] = None
                                         websites[dosa][6] = False
@@ -1616,6 +1636,11 @@ while True:
                                         except:
                                             pass
                                     # del websites[dosa]
+                                    if os.path.isdir(storage_location+str(dosa)):
+                                        try:
+                                            shutil.rmtree(storage_location+str(dosa))
+                                        except Exception as e:
+                                            pass
                                     website_being_downloaded = None
                                     websites_currently_in_process -= 1
                                     with open('data/details.json','r') as jinga:
@@ -1766,9 +1791,9 @@ while True:
                             result = some_thread_result.get(website_being_downloaded)
                             bbgi = websites[website_being_downloaded][0]
                             if result:
-                                bh = threading.Thread(target=run_process_man,args=(str(bbgi['url']), str(bbgi['download_res']), str(bbgi['download_cors_res']), str(bbgi['cors']), str(bbgi['cors_download_res']), str(bbgi['cors_download_cors_res']), str(bbgi['max_cors']), str(bbgi['same_origin_deviation']), str(bbgi['location']), str(bbgi['maintain_logs']), str(bbgi['show_failed_files']), str(bbgi['refetch']), str(bbgi['hash']), str(result[0]), str(result[1])))
+                                bh = threading.Thread(target=run_process_man,args=(str(bbgi['url']), str(bbgi['download_res']), str(bbgi['download_cors_res']), str(bbgi['cors']), str(bbgi['cors_download_res']), str(bbgi['cors_download_cors_res']), str(bbgi['max_cors']), str(bbgi['same_origin_deviation']), str(bbgi['location']), str(bbgi['maintain_logs']), str(bbgi['show_failed_files']), str(bbgi['refetch']), str(bbgi['hash']), str(bbgi['max_threads']), str(result[0]), str(result[1])))
                             else:
-                                bh = threading.Thread(target=run_process_man,args=(str(bbgi['url']), str(bbgi['download_res']), str(bbgi['download_cors_res']), str(bbgi['cors']), str(bbgi['cors_download_res']), str(bbgi['cors_download_cors_res']), str(bbgi['max_cors']), str(bbgi['same_origin_deviation']), str(bbgi['location']), str(bbgi['maintain_logs']), str(bbgi['show_failed_files']), str(bbgi['refetch']), str(bbgi['hash']), '{}', '{}'))
+                                bh = threading.Thread(target=run_process_man,args=(str(bbgi['url']), str(bbgi['download_res']), str(bbgi['download_cors_res']), str(bbgi['cors']), str(bbgi['cors_download_res']), str(bbgi['cors_download_cors_res']), str(bbgi['max_cors']), str(bbgi['same_origin_deviation']), str(bbgi['location']), str(bbgi['maintain_logs']), str(bbgi['show_failed_files']), str(bbgi['refetch']), str(bbgi['hash']), str(bbgi['max_threads']), '{}', '{}'))
                             bh.start()
                             websites[website_being_downloaded][3] = None
                             websites[website_being_downloaded][6] = False
@@ -1806,6 +1831,11 @@ while True:
                             try:
                                 psutil.Process(websites[website_being_downloaded][4].pid).terminate()
                             except:
+                                pass
+                        if os.path.isdir(storage_location+str(website_being_downloaded)):
+                            try:
+                                shutil.rmtree(storage_location+str(website_being_downloaded))
+                            except Exception as e:
                                 pass
                         # del websites[website_being_downloaded]
                         websites_currently_in_process -= 1
@@ -1892,8 +1922,6 @@ while True:
                                 download_resources_enabled = not download_resources_enabled
                             elif pp == "d_c_resource_rect":
                                 download_cors_resources_enabled = not download_cors_resources_enabled
-                            elif pp == "refetch_rect":
-                                refetch_enabled = not refetch_enabled
                             elif pp == "cors_rect":
                                 cors_enabled = not cors_enabled
                             elif pp == "cors_resources":
@@ -1910,6 +1938,12 @@ while True:
                             elif pp == "right_socl":
                                 if same_origin_crawl_limit<9:
                                     same_origin_crawl_limit +=1
+                            elif pp == "left_mt":
+                                if max_threads>0:
+                                    max_threads -= 1
+                            elif pp == "right_mt":
+                                if max_threads<999:
+                                    max_threads += 1
                             elif pp == "go_on":
                                 loading_for_website_download = True
                                 pygame.time.set_timer(DOWNLOAD_THE_DAMN_WEBSITE,1000, loops=1)
@@ -1919,9 +1953,9 @@ while True:
                 recalculate()
                 hashy = random.randint(500000,2000000)
                 script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'website.py')
-                process_man = subprocess.Popen(['python', script_path,textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),storage_location+str(hashy),'True','True',str(refetch_enabled),str(hashy),'{}','{}'],stdout=subprocess.PIPE)
+                process_man = subprocess.Popen(['python', script_path,textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),storage_location+str(hashy),'True','True',str(refetch_enabled),str(max_threads),str(hashy),'{}','{}'],stdout=subprocess.PIPE,creationflags=subprocess.CREATE_NO_WINDOW)
                 website_being_downloaded = hashy
-                urlji = urllib.parse.quote(textinput.value.replace("\\","/"), safe=":/")
+                urlji = urllib.parse.quote(textinput.value.replace("\\","/"), safe=":/()=-$#';\\`~!@%,.^&+={}[]")
                 atempo = urllib.parse.urlparse(urlji)
                 if str(atempo.scheme).strip() == "":
                     urlji = "https://" + urlji
@@ -1935,6 +1969,7 @@ while True:
                     "cors_download_res": download_cors_resources_enabled,
                     "cors_download_cors_res": False,
                     "max_cors": Max_cors,
+                    "max_threads": max_threads,
                     "same_origin_deviation": same_origin_crawl_limit,
                     "location": storage_location+str(hashy),
                     "maintain_logs": True,

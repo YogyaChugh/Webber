@@ -110,7 +110,7 @@ class Webpage:
         try:
             url = url.replace("\\","/")
             if not content:
-                url_requested = urllib.parse.quote(url, safe=":/")
+                url_requested = urllib.parse.quote(url, safe=":/()=-$#';\\`~!@%,.^&+={}[]")
                 content = download_resource_safe(url_requested)
             if self.maintain_logs:
                 self.logs.write(f"\nRECEIVED CONTENTS SUCCESSFULLY | {url} |\n\n")
@@ -140,9 +140,9 @@ class Webpage:
         return {'file_content': content, 'file_type': file_type}
     
     def create_offline_location(self, file_loc_url, file_type, main=False, inside_folder = ""):
-        print("$@"+str((file_loc_url.geturl().split("/"))[-1])+"$@")
+        # print("$@"+str((file_loc_url.geturl().split("/"))[-1])+"$@")
         fileName = "index.html"
-        file_loc_url = urlparse(urllib.parse.quote(file_loc_url.geturl().replace("\\","/"), safe=":/"))
+        file_loc_url = urlparse(urllib.parse.quote(file_loc_url.geturl().replace("\\","/"), safe=":/()=-$#';\\`~!@%,.^&+={}[]"))
         temp_split = (file_loc_url.geturl()).split("/")
 
         # print(file_loc_url)
@@ -287,9 +287,10 @@ class Webpage:
 
 
     def download(self):
-        content = self.download_resource(self.url.geturl(), self.file_type, self.content)
-        self.file_type = content.get('file_type')
-        file_content = content.get('file_content')
-        self.content = file_content
-        # print(f"DOWNLOAD COMPLETE | {self.url.geturl()} |")
-        return True
+        with self.website.sema:
+            content = self.download_resource(self.url.geturl(), self.file_type, self.content)
+            self.file_type = content.get('file_type')
+            file_content = content.get('file_content')
+            self.content = file_content
+            # print(f"DOWNLOAD COMPLETE | {self.url.geturl()} |")
+            return True
