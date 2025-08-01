@@ -291,9 +291,9 @@ class Website:
                 for i in web_page.children:
                     # print('Replaced ',i[0],' with ',i[1])
                     web_page.content = web_page.content.replace(i[0], i[1])
-                    print('\nReplaced !!\n')
-                    print("p"+i[0]+"\n")
-                    print("n"+i[1]+"\n")
+                    # print('\nReplaced !!\n')
+                    # print("p"+i[0]+"\n")
+                    # print("n"+i[1]+"\n")
                     self.special.write(f"Replaced {i[0]} with {i[1]}")
                     self.special.flush()
 

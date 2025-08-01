@@ -18,6 +18,12 @@ import shutil
 import sys
 import webbrowser
 
+
+MAX_WEBSITES = 2
+
+
+
+
 BASE = getattr(sys, '_MEIPASS', os.path.abspath('.'))
 
 assets = ['bgimg.png','cancel.gif','cancel.png','del.gif','delete.gif','delete.png','eye.png','fs.jpeg','github.png','gmail.png','hanging_spider.png','i-cursor.png','idea.gif','internet.gif','leftji.png','main_logo_webber.png','man.gif','meditation.gif','mouse.png','mouse2.png','pause.png','play.png','rocket_icon.png','sad.gif','slack.png','some_catie.gif','spider_logo_main.png','spider.png','ss.png','success.gif','tick.png','w_button_ji_animated.png','w_button_ji.png','fonts/FiraSans-Bold.ttf','fonts/HappyMonkey-Regular.ttf','fonts/LuckiestGuy-Regular.ttf','fonts/VarelaRound-Regular.ttf']
@@ -70,6 +76,9 @@ font5 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 24
 font6 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 18)
 font7 = pygame.font.Font(os.path.join(BASE,"assets/fonts/LuckiestGuy-Regular.ttf"), 50)
 font8 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 10)
+
+
+
 
 some_thread = {}
 some_thread_result = {}
@@ -383,7 +392,7 @@ cors_enabled = False
 resources_for_cors = False
 Max_cors = 0
 
-max_threads = 50
+max_threads = 100
 
 op = 0
 t = 0
@@ -691,7 +700,7 @@ def update_list(main=False):
                 # print(i)
                 b = alist[j-1]
                 alist.append([[b[0][0],b[0][1]+250,b[0][2],b[0][3]], True, [rocket.copy(),0,False,False,[753,b[2][4][1]+250,39,39]],True,[],True,[], websites_temp[i], True])
-        j+=1
+            j+=1
         numji += 1
     alist2 = alist.copy()
     # print(alist)
@@ -842,12 +851,12 @@ def page_two():
         screen.blit(logo3, (i[0]+840,i[1]+140,96,96)) # Spider logo on right
         
         # DATA
-        a = font3.render(str(j[7]['hash']),True,(255, 255, 255)) #NAME
+        a = font3.render(j[7]['url'],True,(255, 255, 255)) #NAME
         screen.blit(a, (i[0]+33, i[1]+26,i[2],i[3]))
         
         pygame.draw.line(screen, (0,0,0), (i[0]+30, i[1]+70), (i[0]+i[2]-30, i[1]+70),6) #LINE SEPARATION
         
-        b = font.render(j[7]['url'],True,(255, 255, 255)) #URL
+        b = font.render("#"+str(j[7]['hash']),True,(255, 255, 255)) #URL
         screen.blit(b, (i[0]+33, i[1]+85,i[2],i[3]))
         
         pygame.draw.rect(screen, (255, 215, 0), (i[0]+30,i[1]+135, 180, 50), border_radius=12)
@@ -928,8 +937,9 @@ def page_four():
     # pygame.draw.rect(screen, (0, 0, 0), [650, 295, 30, 30], 4)
     resources = font5.render("Max Threads", True, (255,255,255))
     screen.blit(resources, (270, 347))
-    special_info = font8.render("Change based on your PC's capabilities - Risky dude !", True, (255,255,255))
-    screen.blit(special_info, (270,380))
+    if allow_options:
+        special_info = font8.render("Change based on your PC's capabilities - Risky dude !", True, (255,255,255))
+        screen.blit(special_info, (270,379))
     if allow_options:
         screen.blit(left, rects['left_mt'])
     num = font5.render(str(max_threads), True , (255, 255, 255))
@@ -1034,6 +1044,12 @@ def page_three():
             screen.blit(play, [537+125, 530])
         else:
             screen.blit(pause, [537+125, 530])
+        djboi = font6.render(f"In case the logs freeze for logs,", True, (255,255,255))
+        djboi1 = font6.render(f"you can pause & resume", True, (255,255,255))
+        djboi2 = font6.render(f"Though this rarely happens !!", True, (255,255,255))
+        screen.blit(djboi, (rect_play_pause.x-30, rect_play_pause.y+55))
+        screen.blit(djboi1, (rect_play_pause.x-30, rect_play_pause.y+80))
+        screen.blit(djboi2, (rect_play_pause.x-30, rect_play_pause.y+105))
         pygame.draw.rect(screen, (210, 4, 45), rect_cancel, border_radius=12)
         pygame.draw.rect(screen, (0,0,0), rect_cancel,4, border_radius=12)
         b = font3.render("Cancel",True,cancel_color) #NAME
@@ -1136,9 +1152,9 @@ def tip():
     advice3 = font6.render('you to set Same Origin Crawl Limit to atleast 3 in',True,(255,255,255))
     advice4 = font6.render('the settings as well as Turn on CORS',True,(255,255,255))
     advice5 = font6.render('resources download.',True,(255,255,255))
-    advice6 = font6.render('NOTE:',True,(255,255,255))
-    advice7 = font6.render('Default Settings are perfect for',True,(255,255,255))
-    advice8 = font6.render('"summer.hackclub.com"',True,(255,255,255))
+    advice6 = font6.render('By the way,',True,(255,255,255))
+    advice7 = font6.render('Set Max Threads carefully ! For weak systems,',True,(255,255,255))
+    advice8 = font6.render('you can go down to as low as 2-3 Threads',True,(255,255,255))
     screen.blit(advice, (240, 270))
     screen.blit(advice2, (240, 295))
     screen.blit(advice3, (240, 320))
@@ -1147,7 +1163,6 @@ def tip():
     screen.blit(advice6, (240, 395))
     screen.blit(advice7, (240, 420))
     screen.blit(advice8, (240, 445))
-    pygame.draw.line(screen, (0,0,0),(240,416),(284,416),4)
 
 if not os.path.exists('webber.log'):
     with open('webber.log','w') as f:
@@ -1157,6 +1172,18 @@ if not os.path.exists('webber.log'):
 else:
     page_num=1
     main_window()
+
+def check_if_max():
+    global MAX_WEBSITES
+    count = 0
+    for j in websites:
+        if not websites[j][5] and not websites[j][7]:
+            count+=1
+    if count<MAX_WEBSITES:
+        return True
+    else:
+        return False
+
 
 
 while True:
@@ -1247,13 +1274,10 @@ while True:
                     rect4.y += 1
                     counterman = 0
                     crawlanddownload()
-                    for pasta in websites:
-                        if not websites[pasta][5] and not websites[pasta][7]:
-                            counterman += 1
                     # print("Websites Running: ",counterman)
-                    if counterman>=1:
+                    if not check_if_max():
                         display_err = True
-                        display_err_msg = "Max 1 at a time !"
+                        display_err_msg = f"Max {MAX_WEBSITES} scrapes at a time !"
                         loading_allow = False
                     else:
                         loading_allow = True
@@ -1279,23 +1303,17 @@ while True:
                 valid = None
                 pressed = False
                 crawlanddownload()
-                counterman = 0
-                for pasta in websites:
-                    if not websites[pasta][5] and not websites[pasta][7]:
-                        counterman += 1
-                if counterman<1:
-                    allow_options = True
-                    download_resources_enabled = True
-                    download_cors_resources_enabled = True
-                    same_origin_crawl_limit = 2
-                    refetch_enabled = False
-
-                    cors_enabled = False
-                    resources_for_cors = False
-                    Max_cors = 0
-                    max_threads = 50
-                    checking = website.StoppableThread(target=check_if_website_correct)
-                    checking.start()
+                allow_options = True
+                download_resources_enabled = True
+                download_cors_resources_enabled = True
+                same_origin_crawl_limit = 2
+                refetch_enabled = False
+                cors_enabled = False
+                resources_for_cors = False
+                Max_cors = 0
+                max_threads = 100
+                checking = website.StoppableThread(target=check_if_website_correct)
+                checking.start()
                 pygame.mouse.set_cursor(nw_mouse)
             if event.type == DOWNLOADS_PRESSED and pressed_downloads:
                 rectangle1.y -= 5
@@ -1318,9 +1336,9 @@ while True:
                 display_err = False
                 display_err_msg = ""
                 # print("Websites Running: ",counterman)
-                if websites_currently_in_process>=1:
+                if not check_if_max():
                     display_err = True
-                    display_err_msg = "Max 1 at a time !"
+                    display_err_msg = f"Max {MAX_WEBSITES} scrapes at a time !"
                     loading_allow = False
                 else:
                     loading_allow = True
@@ -1594,17 +1612,21 @@ while True:
                                 else:
                                     websites[dosa][5] = not websites[dosa][5]
                                     if not websites[dosa][5]:
-                                        resultp = some_thread_result.get(dosa)
-                                        bbgip = websites[dosa][0]
-                                        if resultp:
-                                            bhai = threading.Thread(target=run_process_man, args=(str(bbgip['url']), str(bbgip['download_res']), str(bbgip['download_cors_res']), str(bbgip['cors']), str(bbgip['cors_download_res']), str(bbgip['cors_download_cors_res']), str(bbgip['max_cors']), str(bbgip['same_origin_deviation']), str(bbgip['location']), str(bbgip['maintain_logs']), str(bbgip['show_failed_files']), str(bbgip['refetch']), str(bbgip['hash']), str(bbgip['max_threads']), str(resultp[0]), str(resultp[1])))
+                                        if not check_if_max():
+                                            resultp = some_thread_result.get(dosa)
+                                            bbgip = websites[dosa][0]
+                                            if resultp:
+                                                bhai = threading.Thread(target=run_process_man, args=(str(bbgip['url']), str(bbgip['download_res']), str(bbgip['download_cors_res']), str(bbgip['cors']), str(bbgip['cors_download_res']), str(bbgip['cors_download_cors_res']), str(bbgip['max_cors']), str(bbgip['same_origin_deviation']), str(bbgip['location']), str(bbgip['maintain_logs']), str(bbgip['show_failed_files']), str(bbgip['refetch']), str(bbgip['hash']), str(bbgip['max_threads']), str(resultp[0]), str(resultp[1])))
+                                            else:
+                                                bhai = threading.Thread(target=run_process_man, args=(str(bbgip['url']), str(bbgip['download_res']), str(bbgip['download_cors_res']), str(bbgip['cors']), str(bbgip['cors_download_res']), str(bbgip['cors_download_cors_res']), str(bbgip['max_cors']), str(bbgip['same_origin_deviation']), str(bbgip['location']), str(bbgip['maintain_logs']), str(bbgip['show_failed_files']), str(bbgip['refetch']), str(bbgip['hash']), str(bbgip['max_threads']), '{}','{}'))
+                                            bhai.start()
+                                            websites[dosa][3] = None
+                                            websites[dosa][6] = False
+                                            websites[dosa][7] = False
+                                            some_thread_result[websites[dosa][0]['hash']] = [{},{}]
                                         else:
-                                            bhai = threading.Thread(target=run_process_man, args=(str(bbgip['url']), str(bbgip['download_res']), str(bbgip['download_cors_res']), str(bbgip['cors']), str(bbgip['cors_download_res']), str(bbgip['cors_download_cors_res']), str(bbgip['max_cors']), str(bbgip['same_origin_deviation']), str(bbgip['location']), str(bbgip['maintain_logs']), str(bbgip['show_failed_files']), str(bbgip['refetch']), str(bbgip['hash']), str(bbgip['max_threads']), '{}','{}'))
-                                        bhai.start()
-                                        websites[dosa][3] = None
-                                        websites[dosa][6] = False
-                                        websites[dosa][7] = False
-                                        some_thread_result[websites[dosa][0]['hash']] = [{},{}]
+                                            djboi = font6.render(f"Max {MAX_WEBSITES} scrapes at a time !", True, (255,255,255))
+                                            screen.blit(djboi, (dosa_location[0]+133, dosa_location[1]+85, dosa_location[2], dosa_location[3]))
                                     else:
                                         websites[dosa][3] = 0
                                         if websites[dosa][4] and not websites[dosa][4].poll():
@@ -1673,8 +1695,13 @@ while True:
                                         websites[dosa][2].append([obj1, [120, websites[dosa][2][-1][1][1]+30]])
                                     websites[dosa][2].append([obj, [120, websites[dosa][2][-1][1][1]+30]])
                                     websites[dosa][2].append([obj2, [120, websites[dosa][2][-1][1][1]+30]])
+                                    cached_log_renderers.append([obj1, [120, cached_log_renderers[-1][1][1]+30]])
+                                    cached_log_renderers.append([obj, [120, cached_log_renderers[-1][1][1]+30]])
+                                    cached_log_renderers.append([obj2, [120, cached_log_renderers[-1][1][1]+30]])
+                                    for i in cached_log_renderers:
+                                        i[1][1] -= 30
                                     for i in websites[dosa][2]:
-                                        i[1][1] -= 90
+                                        i[1][1] -= 30
                                     websites[dosa][9] = True
                                     completed.append(dosa)
                                     recalculate()
@@ -1688,6 +1715,7 @@ while True:
                                 page_three()
                                 websites[dosa][9] = True
                                 break
+                            dosa_num+=1
             if event.type == pygame.MOUSEWHEEL:
                 if (len(alist)+websites_currently_in_process)!=0:
                     if len(alist)==0:
@@ -1719,6 +1747,7 @@ while True:
                 cached_log_renderers.append(i)
         elif not website_being_downloaded and cached_done_once:
             cached_done_once = False
+            pygame.draw.rect(screen, (44, 42, 49), [220-125+4, -22, 560+250-8, 280+70+25+150-4], border_radius=20)
             for i in cached_log_renderers:
                 screen.blit(i[0],i[1])
                 
@@ -1792,17 +1821,32 @@ while True:
                     else:
                         websites[website_being_downloaded][5] = not websites[website_being_downloaded][5]
                         if not websites[website_being_downloaded][5]:
-                            result = some_thread_result.get(website_being_downloaded)
-                            bbgi = websites[website_being_downloaded][0]
-                            if result:
-                                bh = threading.Thread(target=run_process_man,args=(str(bbgi['url']), str(bbgi['download_res']), str(bbgi['download_cors_res']), str(bbgi['cors']), str(bbgi['cors_download_res']), str(bbgi['cors_download_cors_res']), str(bbgi['max_cors']), str(bbgi['same_origin_deviation']), str(bbgi['location']), str(bbgi['maintain_logs']), str(bbgi['show_failed_files']), str(bbgi['refetch']), str(bbgi['hash']), str(bbgi['max_threads']), str(result[0]), str(result[1])))
+                            if not check_if_max():
+                                result = some_thread_result.get(website_being_downloaded)
+                                bbgi = websites[website_being_downloaded][0]
+                                if result:
+                                    bh = threading.Thread(target=run_process_man,args=(str(bbgi['url']), str(bbgi['download_res']), str(bbgi['download_cors_res']), str(bbgi['cors']), str(bbgi['cors_download_res']), str(bbgi['cors_download_cors_res']), str(bbgi['max_cors']), str(bbgi['same_origin_deviation']), str(bbgi['location']), str(bbgi['maintain_logs']), str(bbgi['show_failed_files']), str(bbgi['refetch']), str(bbgi['hash']), str(bbgi['max_threads']), str(result[0]), str(result[1])))
+                                else:
+                                    bh = threading.Thread(target=run_process_man,args=(str(bbgi['url']), str(bbgi['download_res']), str(bbgi['download_cors_res']), str(bbgi['cors']), str(bbgi['cors_download_res']), str(bbgi['cors_download_cors_res']), str(bbgi['max_cors']), str(bbgi['same_origin_deviation']), str(bbgi['location']), str(bbgi['maintain_logs']), str(bbgi['show_failed_files']), str(bbgi['refetch']), str(bbgi['hash']), str(bbgi['max_threads']), '{}', '{}'))
+                                bh.start()
+                                websites[website_being_downloaded][3] = None
+                                websites[website_being_downloaded][6] = False
+                                websites[website_being_downloaded][7] = False
+                                some_thread_result[bbgi['hash']] = [{},{}]
                             else:
-                                bh = threading.Thread(target=run_process_man,args=(str(bbgi['url']), str(bbgi['download_res']), str(bbgi['download_cors_res']), str(bbgi['cors']), str(bbgi['cors_download_res']), str(bbgi['cors_download_cors_res']), str(bbgi['max_cors']), str(bbgi['same_origin_deviation']), str(bbgi['location']), str(bbgi['maintain_logs']), str(bbgi['show_failed_files']), str(bbgi['refetch']), str(bbgi['hash']), str(bbgi['max_threads']), '{}', '{}'))
-                            bh.start()
-                            websites[website_being_downloaded][3] = None
-                            websites[website_being_downloaded][6] = False
-                            websites[website_being_downloaded][7] = False
-                            some_thread_result[bbgi['hash']] = [{},{}]
+                                obj1 = font.render("="*40, True, (245,176,39))
+                                djboi = font6.render(f"Max {MAX_WEBSITES} scrapes at a time !", True, (245,176,39))
+                                obj2 = font.render("="*40, True, (245,176,39))
+                                screen.blit(djboi, (rect_play_pause.x, rect_play_pause.y+50))
+                                websites[website_being_downloaded][9] = True
+                                if len(websites[website_being_downloaded][2])==0:
+                                    websites[website_being_downloaded][2].append([obj1,[120, 450]])
+                                else:
+                                    websites[website_being_downloaded][2].append([obj1, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
+                                websites[website_being_downloaded][2].append([obj, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
+                                websites[website_being_downloaded][2].append([obj2, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
+                                for i in websites[website_being_downloaded][2]:
+                                    i[1][1] -= 90
                         else:
                             websites[website_being_downloaded][3] = 0
                             if websites[website_being_downloaded][4] and not websites[website_being_downloaded][4].poll():
@@ -1812,7 +1856,7 @@ while True:
                                     pass
                             obj1 = font.render("="*40, True, (0,0,139))
                             obj = font.render("Paused Scraping ...",True, (125,5,82))
-                            obj2 = font.render("="*40, True, (0,0,139)) 
+                            obj2 = font.render("="*40, True, (0,0,139))
                             if len(websites[website_being_downloaded][2])==0:
                                 websites[website_being_downloaded][2].append([obj1,[120, 450]])
                             else:
@@ -1869,8 +1913,13 @@ while True:
                             websites[website_being_downloaded][2].append([obj1, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
                         websites[website_being_downloaded][2].append([obj, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
                         websites[website_being_downloaded][2].append([obj2, [120, websites[website_being_downloaded][2][-1][1][1]+30]])
+                        cached_log_renderers.append([obj1, [120, cached_log_renderers[-1][1][1]+30]])
+                        cached_log_renderers.append([obj, [120, cached_log_renderers[-1][1][1]+30]])
+                        cached_log_renderers.append([obj2, [120, cached_log_renderers[-1][1][1]+30]])
+                        for i in cached_log_renderers:
+                            i[1][1] -= 30
                         for i in websites[website_being_downloaded][2]:
-                            i[1][1] -= 90
+                            i[1][1] -= 30
                         websites[website_being_downloaded][9] = True
                         completed.append(website_being_downloaded)
                         website_being_downloaded = None
