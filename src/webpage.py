@@ -140,13 +140,15 @@ class Webpage:
         return {'file_content': content, 'file_type': file_type}
     
     def create_offline_location(self, file_loc_url, file_type, main=False, inside_folder = ""):
+        self.website.special.write(f"\n\n\nPasta Man: {file_loc_url}\n\n\n")
+        self.website.special.flush()
         # print("$@"+str((file_loc_url.geturl().split("/"))[-1])+"$@")
         fileName = "index.html"
         file_loc_url = urlparse(urllib.parse.quote(file_loc_url.geturl().replace("\\","/"), safe=":/()=-$#';\\`~!@%,.^&+={}[]"))
         temp_split = (file_loc_url.geturl()).split("/")
 
         # print(file_loc_url)
-        file_path = file_loc_url.path.replace("\\","/")
+        file_path = file_loc_url.path
         if file_type=="text/html" and file_loc_url.path[-5:]!=".html":
             fileName = "index.html"
         elif file_type == "text/xml" and file_loc_url.path[-4:]!=".xml":
@@ -163,9 +165,13 @@ class Webpage:
             elif file_type == "text/xhtml":
                 fileName = "index.xhtml"
 
-        while file_path.startswith("/") or file_path.startswith("\\"):
+        while file_path.startswith("/"):
             file_path = "/".join(file_path.split("/")[1:])
-        new_file_path = file_path
+        while file_path.startswith("\\"):
+            file_path = "/".join(file_path.split("\\")[1:])
+        new_file_path = ""
+        self.website.special.write(f"\n\n\nPasta Ji: {file_path}\n\n\n")
+        self.website.special.flush()
         for i in range(len(file_path)):
             code = ord(file_path[i])
             if (code<47 or code>57) and (code<65 or code>172) and code not in [33,35,36,37,38,39,40,41,43,44,45,46,47,59,61,64,123,125,126]:
@@ -177,6 +183,9 @@ class Webpage:
             tempy = os.path.join(inside_folder, new_file_path)
         else:
             tempy = new_file_path
+        
+        self.website.special.write(f"\n\n\nJust Before: {tempy}\n\n\n")
+        self.website.special.flush()
 
         if self.website.url.hostname==file_loc_url.hostname:
             tempy = os.path.join(self.loc, str(file_loc_url.hostname), tempy)
@@ -186,6 +195,8 @@ class Webpage:
             self.file_location = tempy
             self.fileName = fileName
         # print(tempy)
+        self.website.special.write(f"\n\n\nPasta: {tempy.replace("\\","/")}  and {fileName}\n\n\n")
+        self.website.special.flush()
         return (tempy.replace("\\","/"),fileName)
     
     def save_file(self, file_loc, fileName, file_content, file_type):

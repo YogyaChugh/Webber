@@ -291,6 +291,11 @@ class Website:
                 for i in web_page.children:
                     # print('Replaced ',i[0],' with ',i[1])
                     web_page.content = web_page.content.replace(i[0], i[1])
+                    print('\nReplaced !!\n')
+                    print("p"+i[0]+"\n")
+                    print("n"+i[1]+"\n")
+                    self.special.write(f"Replaced {i[0]} with {i[1]}")
+                    self.special.flush()
 
                 web_page.save_file(ppp[0], ppp[1], web_page.content, web_page.file_type)
                 self.logs.append(f"Download Success | {web_page.url.geturl()} |")
@@ -343,7 +348,7 @@ class Website:
                         to_be_done = False
                         file_path = os.path.join(web_page.file_location, web_page.fileName)
 
-                        web_page.children.append([url, os.path.relpath(temp[4], web_page.file_location).replace("\\","/")])
+                        web_page.children.append([url, os.path.relpath(temp[4], os.path.join(web_page.file_location, web_page.fileName)).replace("\\","/")])
                         # print(f'Sending 1 {url} to {os.path.relpath(temp[4], web_page.file_location).replace("\\","/")}')
                         self.logs.append(f"Using Cached | {url2} |")
                         print(f"$@Using Cached | {url2} |$@", flush=True)
@@ -441,7 +446,7 @@ class Website:
                             except:
                                 self.resources_downloaded[url] = (new_url, False, False, type_file, os.path.join(location, file_name))
 
-                            web_page.children.append([url, os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/")])
+                            web_page.children.append([url, os.path.relpath(os.path.join(location, file_name), os.path.join(web_page.file_location, web_page.fileName)).replace("\\","/")])
                             # print(f'Sending 4 {url} to {os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/")}')
 
                             if self.settings.get('maintain_logs'):
