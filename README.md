@@ -105,25 +105,26 @@ Running the project can be done in 2 ways !
 
 * Command Line
   > Run `python src/website.py` with the following non-optional args:-
-  1) URL
-  2) Download Resources (True/False)
-  3) Download Cors Resources for same origin links (True/False)
-  4) Cross Origin links to be scraped ? (True/False)
-  5) Download Resources for CORS links (True/False)
-  5) Download CORS Resources for CORS links (True/False) (Never set to True)
-  6) Max CORS links to be scraped (integer)
-  7) Same Origin Deviation (integer) (should be min 2)
-  8) Location (string) ('.' is perfect)
-  9) Maintain Logs ? (True/False)
-  10) Show Failed Files ? (True/False)
-  11) Refetch (True/False)
-  12) Hash Value (Any random integer)
-  13) Resources to Ignore (Empty dict is perfect)
-  14) Webpages to Ignore (Empty dict is perfect)
+  - URL
+  - Download Resources (True/False)
+  - Download Cors Resources for same origin links (True/False)
+  - Cross Origin links to be scraped ? (True/False)
+  - Download Resources for CORS links (True/False)
+  - Download CORS Resources for CORS links (True/False) (Never set to True)
+  - Max CORS links to be scraped (integer)
+  - Same Origin Deviation (integer) (should be min 2)
+  - Location (string) ('.' is perfect)
+  - Maintain Logs ? (True/False)
+  - Show Failed Files ? (True/False)
+  - Refetch (True/False)
+  - Hash Value (Any random integer)
+  - Max Threads (It can be as low as 3 or as high as 500 ! Depends on ur system !)
+  - Resources to Ignore (Empty dict is perfect)
+  - Webpages to Ignore (Empty dict is perfect)
 
 > Basic Command
 ```bash
-  python src/website.py some_url True True False False False 0 2 . True True True 12344 {} {}
+  python src/website.py some_url True True False False False 0 2 . True True True 12344 50 {} {}
 ```
 
 

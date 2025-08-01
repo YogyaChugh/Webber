@@ -497,6 +497,8 @@ def read_logs(hash):
                     obj = font.render(t,True, (255,255,255))
                 elif i.startswith("Download Success") or i.startswith("Resource Download Success"):
                     obj = font.render(t,True, (0,255,0))
+                elif i.startswith("Using Cached"):
+                    obj = font.render(t, True, (0,255,255))
                 elif i.startswith("Download Failed") or i.startswith("Resource Download Failed"):
                     obj = font.render(t, True, (255,0,0))
                 elif i=="No Internet Connection !!":
@@ -639,6 +641,8 @@ def read_logs(hash):
                         obj = font.render(t,True, (255,255,255))
                     elif i.startswith("Download Success") or i.startswith("Resource Download Success"):
                         obj = font.render(t,True, (0,255,0))
+                    elif i.startswith("Using Cached"):
+                        obj = font.render(t, True, (0,255,255))
                     elif i.startswith("Download Failed") or i.startswith("Resource Download Failed"):
                         obj = font.render(t, True, (255,0,0))
                     elif i=="No Internet Connection !!":
@@ -1608,9 +1612,9 @@ while True:
                                                 psutil.Process(websites[dosa][4].pid).terminate()
                                             except:
                                                 pass
-                                        obj1 = font.render("="*40, True, (255, 255, 255)) 
-                                        obj = font.render("Paused Scraping ...",True, (255,255,255))
-                                        obj2 = font.render("="*40, True, (255, 255, 255)) 
+                                        obj1 = font.render("="*40, True, (0,0,139))
+                                        obj = font.render("Paused Scraping ...",True, (125,5,82))
+                                        obj2 = font.render("="*40, True, (0,0,139))
                                         if len(websites[dosa][2])==0:
                                             websites[dosa][2].append([obj1,[120, 450]])
                                         else:
@@ -1660,9 +1664,9 @@ while True:
                                             os.remove(f'temp/{dosa}.json')
                                         except:
                                             pass
-                                    obj1 = font.render("="*40, True, (255, 255, 255)) 
-                                    obj = font.render("Cancelled Scraping ...",True, (255,255,255))
-                                    obj2 = font.render("="*40, True, (255, 255, 255)) 
+                                    obj1 = font.render("="*40, True, (128,0,0))
+                                    obj = font.render("Cancelled Scraping ...",True, (128,0,0))
+                                    obj2 = font.render("="*40, True, (128,0,0))
                                     if len(websites[dosa][2])==0:
                                         websites[dosa][2].append([obj1,[120, 450]])
                                     else:
@@ -1806,9 +1810,9 @@ while True:
                                     psutil.Process(websites[website_being_downloaded][4].pid).terminate()
                                 except:
                                     pass
-                            obj1 = font.render("="*40, True, (255, 255, 255)) 
-                            obj = font.render("Paused Scraping ...",True, (255,255,255))
-                            obj2 = font.render("="*40, True, (255, 255, 255)) 
+                            obj1 = font.render("="*40, True, (0,0,139))
+                            obj = font.render("Paused Scraping ...",True, (125,5,82))
+                            obj2 = font.render("="*40, True, (0,0,139)) 
                             if len(websites[website_being_downloaded][2])==0:
                                 websites[website_being_downloaded][2].append([obj1,[120, 450]])
                             else:
@@ -1856,9 +1860,9 @@ while True:
                                 os.remove(f'temp/{website_being_downloaded}.json')
                             except:
                                 pass
-                        obj1 = font.render("="*40, True, (255, 255, 255)) 
-                        obj = font.render("Cancelled Scraping ...",True, (255,255,255))
-                        obj2 = font.render("="*40, True, (255, 255, 255)) 
+                        obj1 = font.render("="*40, True, (128,0,0)) 
+                        obj = font.render("Cancelled Scraping ...",True, (128,0,0))
+                        obj2 = font.render("="*40, True, (128,0,0))
                         if len(websites[website_being_downloaded][2])==0:
                             websites[website_being_downloaded][2].append([obj1,[120, 450]])
                         else:
@@ -1939,10 +1943,10 @@ while True:
                                 if same_origin_crawl_limit<9:
                                     same_origin_crawl_limit +=1
                             elif pp == "left_mt":
-                                if max_threads>0:
+                                if max_threads>2:
                                     max_threads -= 1
                             elif pp == "right_mt":
-                                if max_threads<999:
+                                if max_threads<500:
                                     max_threads += 1
                             elif pp == "go_on":
                                 loading_for_website_download = True
@@ -1986,9 +1990,9 @@ while True:
                 cached_done_once = True
                 cached_log_renderers = []
                 page_three()
-                obj1 = font.render("="*40, True, (255, 255, 255)) 
-                obj = font.render(f"Scraping Website {textinput.value}",True, (255,255,255))
-                obj2 = font.render("="*40, True, (255, 255, 255)) 
+                obj1 = font.render("="*40, True, (0,0,139)) 
+                obj = font.render(f"Scraping Website {textinput.value}",True, (125,5,82))
+                obj2 = font.render("="*40, True, (0,0,139))
                 if len(websites[website_being_downloaded][2])==0:
                     websites[website_being_downloaded][2].append([obj1,[120, 450]])
                 else:

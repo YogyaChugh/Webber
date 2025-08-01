@@ -342,12 +342,12 @@ class Website:
                         # print(f"Skipped | {url} |")
                         to_be_done = False
                         file_path = os.path.join(web_page.file_location, web_page.fileName)
-                        
+
                         web_page.children.append([url, os.path.relpath(temp[4], web_page.file_location).replace("\\","/")])
                         # print(f'Sending 1 {url} to {os.path.relpath(temp[4], web_page.file_location).replace("\\","/")}')
-                        self.logs.append(f"Resource Download Success | {url} |")
-                        print(f"$@Resource Download Success | {url} |$@", flush=True)
-                        self.special.write(f"Resource Download Success | {url} |")
+                        self.logs.append(f"Using Cached | {url2} |")
+                        print(f"$@Using Cached | {url2} |$@", flush=True)
+                        self.special.write(f"Using Cached | {url2} |")
                         self.special.flush()
                 if self.stopped:
                     return
@@ -395,7 +395,7 @@ class Website:
                             content = str(jsbeautifier.beautify(content))
                         elif type_file == "text/xml" or type_file == "text/xhtml":
                             content = BeautifulSoup(content, features="xml").prettify()
-                            
+
                         if web_page.url.hostname == temporary_made_url.hostname and web_page.same_origin_deviation>0:
                             temp = Webpage(temporary_made_url, self, type_file, web_page.same_origin_deviation-1, web_page.cors_level, url, content, web_page.download_res, web_page.download_cors_res)
                         elif web_page.url.hostname != temporary_made_url.hostname and web_page.cors and web_page.cors_level>0:
@@ -408,6 +408,7 @@ class Website:
                         if temp2 and temp==temp2[0]:
                             if temp2[1] or temp2[2]:
                                 web_page.children.append([url, os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")])
+                                print(f"$@Using Cached | {url2} |$@", flush=True)
                                 # print(f'Sending 2 {url} to {os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")}')
                                 return
                         self.webpages_scraped[url] = (temp, True, False)
@@ -439,15 +440,15 @@ class Website:
                                 self.resources_downloaded[url] = (new_url, False, True, type_file, os.path.join(location, file_name))
                             except:
                                 self.resources_downloaded[url] = (new_url, False, False, type_file, os.path.join(location, file_name))
-                            
+
                             web_page.children.append([url, os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/")])
                             # print(f'Sending 4 {url} to {os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/")}')
-                                    
+
                             if self.settings.get('maintain_logs'):
                                 self.logger.write(f"\n\nDownload Complete | {new_url} |")
                                 self.logger.flush()
                             self.logs.append(f"Resource Download Success | {url} |")
-                            print(f"$@Resource Download Success | {url} |$@", flush=True)
+                            print(f"$@Resource Download Success | {url2} |$@", flush=True)
                             self.special.write(f"Resource Download Success | {url} |")
                             self.special.flush()
                         else:
@@ -460,7 +461,7 @@ class Website:
                 if not main:
                     self.logs.append(f"Resource Download Failed | {url} |")
                     if not isinstance(e, urllib.error.HTTPError) and not e.code==404:
-                        print(f"$@Resource Download Failed | {url} |$@", flush=True)
+                        print(f"$@Resource Download Failed | {url2} |$@", flush=True)
                     self.special.write(f"Resource Download Failed | {url} |")
                     self.special.flush()
                     if self.settings.get('maintain_logs'):
