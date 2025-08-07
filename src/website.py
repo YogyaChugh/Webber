@@ -249,9 +249,9 @@ class Website:
                 self.webpages_scraped[web_page.prev_link] = (web_page, True, False)
                 if web_page.content:
                     done = True
-                    urls = web_page.find_urls(web_page.content)
+                    urls_pro = web_page.find_urls(web_page.content)
                     if not self.stopped:
-                        for url in urls:
+                        for url in urls_pro:
                             if self.stopped:
                                 return
                             # print(f'Thread started for {url}')
@@ -271,9 +271,9 @@ class Website:
                 if not done:
                     temp_threads[-1].join()
                     temp_threads = []
-                    urls = web_page.find_urls(web_page.content)
+                    urls_proo = web_page.find_urls(web_page.content)
                     if not self.stopped:
-                        for url in urls:
+                        for url in urls_proo:
                             if self.stopped:
                                 return
                             # print(f'Thread started for {url}')
@@ -314,7 +314,7 @@ class Website:
                 # print('problem')
                 self.ab -= 1
                 self.logs.append(f"Download Failed | {web_page.url.geturl()} |")
-                print(f"$@Download Failed | {web_page.url.geturl()} |$@", flush=True)
+                # print(f"$@Download Failed | {web_page.url.geturl()} |$@", flush=True)
                 # except:
                 try:
                     if not isinstance(e, urllib.error.HTTPError) and not e.code == 404:
@@ -339,14 +339,15 @@ class Website:
                     print("$@No Internet Connection !!$@", flush=True)
                 
     def check_and_call(self, web_page, url, main=True, last_try=False):
-        # self.special.write(f"\n\n\n\n\nCHECKING THE KIDDY: {url}\n\n\n\n")
+        self.special.write(f"\n\n\n\n\nCHECKING THE KIDDY: {url}\n\n\n\n")
+        self.special.flush()
         with self.sema:
             the_simple_url = url
-            url = remove_unnecessary(url)
-            url2 = self.smart_urljoin(web_page.url, url)
+            url_is_new = remove_unnecessary(url)
+            url2 = self.smart_urljoin(web_page.url, url_is_new)
             url3 = None
             if main:
-                url3 = self.smart_urljoin(self.url, url)
+                url3 = self.smart_urljoin(self.url, url_is_new)
             # print('New: ',url2)
             # self.special.write(f'\nNEW: {url2}')
             # self.special.flush()
@@ -365,7 +366,7 @@ class Website:
                         # self.special.write(f"\n\nFor {the_simple_url} with { os.path.relpath(temp[4], web_page.file_location).replace("\\","/")} where the details are:\n\n1st: {temp[4]} and {web_page.file_location}")
                         # print(f'Sending 1 {url} to {os.path.relpath(temp[4], web_page.file_location).replace("\\","/")}')
                         self.logs.append(f"Using Cached | {url2} |")
-                        print(f"$@Using Cached | {url2} |$@", flush=True)
+                        print(f"$@Using Cached | {the_simple_url} |$@", flush=True)
                         self.special.write(f"Using Cached | {url2} |")
                         self.special.flush()
                 if self.stopped:
@@ -426,7 +427,7 @@ class Website:
                                 web_page.children.append([the_simple_url, os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")])
                                 # self.special.write(f"\n\nFor {the_simple_url} with {os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")} where the details are:\n\n1st: {os.path.join(temp2[0].file_location, temp2[0].fileName)} and {web_page.file_location}")
                                 # self.special.flush()
-                                print(f"$@Using Cached | {url2} |$@", flush=True)
+                                print(f"$@Using Cached | {the_simple_url} |$@", flush=True)
                                 # print(f'Sending 2 {url} to {os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")}')
                                 return
                         self.webpages_scraped[the_simple_url] = (temp_wow, True, False)
@@ -470,7 +471,7 @@ class Website:
                                 self.logger.write(f"\n\nDownload Complete | {new_url} |")
                                 self.logger.flush()
                             self.logs.append(f"Resource Download Success | {the_simple_url} |")
-                            print(f"$@Resource Download Success | {url2} |$@", flush=True)
+                            print(f"$@Resource Download Success | {the_simple_url} |$@", flush=True)
                             self.special.write(f"Resource Download Success | {the_simple_url} |")
                             self.special.flush()
                         else:
@@ -479,17 +480,16 @@ class Website:
                             # print(f"CORS RES: {web_page.download_cors_res}")
             except Exception as e:
                 if main:
-                    # self.special.write(f"\n\n\n\naaaaaaaa: {url}\n\n\n\n")
                     self.check_and_call(web_page, url3, False)
                 if not main:
-                    self.logs.append(f"Resource Download Failed | {the_simple_url} |")
-                    print(f"$@Resource Download Failed | {url2} |$@", flush=True)
+                    self.logs.append(f"Resource Download Failed | {the_simple_url} and {url2} |")
+                    # print(f"$@Resource Download Failed | {the_simple_url} and {url2} |$@", flush=True)
                     try:
-                        if not isinstance(e, urllib.error.HTTPError) and not e.code==404:
-                            print(f"$@Resource Download Failed | {url2} |$@", flush=True)
+                        if not isinstance(e, urllib.error.HTTPError) and e.code!=404:
+                            print(f"$@Resource Download Failed | {the_simple_url} |$@", flush=True)
                     except:
                         pass
-                    self.special.write(f"Resource Download Failed | {the_simple_url} |")
+                    self.special.write(f"Resource Download Failed | {the_simple_url} and {url2} |")
                     self.special.flush()
                     if self.settings.get('maintain_logs'):
                         exc_type, exc_value, exc_tb = sys.exc_info()

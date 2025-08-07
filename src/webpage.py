@@ -128,7 +128,7 @@ class Webpage:
         elif file_type == "text/css":
             if not content:
                 content = content.decode("utf-8")
-            content = str(cssbeautifier.beautify(content))
+            # content = str(cssbeautifier.beautify(content))
         elif file_type == "text/javascript":
             if not content:
                 content = content.decode("utf-8")

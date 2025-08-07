@@ -28,7 +28,7 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     BASE = str(Path(sys._MEIPASS))
 else:
     BASE = os.path.abspath(Path(__file__).parent.parent)
-    print('hoye')
+    # print('hoye')
 
 BASE2 = os.getcwd()
 
@@ -85,8 +85,6 @@ font5 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 24
 font6 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 18)
 font7 = pygame.font.Font(os.path.join(BASE,"assets/fonts/LuckiestGuy-Regular.ttf"), 50)
 font8 = pygame.font.Font(os.path.join(BASE,"assets/fonts/FiraSans-Bold.ttf"), 10)
-
-
 
 
 some_thread = {}
@@ -1778,9 +1776,10 @@ while True:
                     page_two()
             
     elif page_num == 3:
-        if website_being_downloaded and websites[website_being_downloaded][9]:
+        if website_being_downloaded and websites.get(website_being_downloaded) and websites[website_being_downloaded][9]:
             websites[website_being_downloaded][9] = False
             pygame.draw.rect(screen, (44, 42, 49), [220-125+4, -22, 560+250-8, 280+70+25+150-4], border_radius=20)
+            
             for i in websites[website_being_downloaded][2]:
                 screen.blit(i[0],i[1])
                 cached_log_renderers.append(i)
