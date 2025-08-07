@@ -18,6 +18,15 @@ import shutil
 import sys
 import webbrowser
 from pathlib import Path
+import platform
+
+the_platform = None
+if sys.platform.startswith("win"):
+    the_platform = "Windows"
+elif sys.platform.startswith("linux"):
+    the_platform = "Linux"
+elif sys.platform.startswith("darwin"):
+    the_platform = "Mac"
 
 
 OTHER_OPEN_WINDOWS = []
@@ -728,7 +737,12 @@ update_list(True)
 
 def run_process_man(url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages):
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        script_path = os.path.join(BASE, 'website.exe')
+        if the_platform=="Windows":
+            script_path = os.path.join(BASE, 'website.exe')
+        elif the_platform=="Linux":
+            script_path = os.path.join(BASE, 'website')
+        else:
+            script_path = os.path.join(BASE, 'website.exe')
         print(script_path)
         process_ji = subprocess.Popen([script_path, url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages, BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
     else:
@@ -1524,12 +1538,17 @@ while True:
                                         break
                                 if dothat:
                                     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-                                        script_path = os.path.join(BASE, 'webview_launch.exe')
+                                        if the_platform=="Windows":
+                                            script_path = os.path.join(BASE, 'webview_launch.exe')
+                                        elif the_platform=="Linux":
+                                            script_path = os.path.join(BASE, 'webview_launch')
+                                        else:
+                                            script_path = os.path.join(BASE, 'webview_launch.exe')
                                         print(script_path)
-                                        process = subprocess.Popen([script_path, j[-2]['file_location'],f'Webber - {j[-2]['hash']}'],creationflags=subprocess.CREATE_NO_WINDOW)
+                                        process = subprocess.Popen([script_path, j[-2]['file_location'],f'Webber - {j[-2]['hash']}'])
                                     else:
                                         script_path = 'src/webview_launch.py'
-                                        process = subprocess.Popen(['python', script_path, j[-2]['file_location'],f'Webber - {j[-2]['hash']}'],creationflags=subprocess.CREATE_NO_WINDOW)
+                                        process = subprocess.Popen(['python', script_path, j[-2]['file_location'],f'Webber - {j[-2]['hash']}'])
                                     OTHER_OPEN_WINDOWS.append(process)
                                     total_lists[j[-2]['hash']] = ([j[-2]['file_location'],process])
                                     clicked.append(j[-2]['hash'])
@@ -2047,7 +2066,12 @@ while True:
                 recalculate()
                 hashy = random.randint(500000,2000000)
                 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-                    script_path = os.path.join(BASE, 'website.exe')
+                    if the_platform=="Windows":
+                        script_path = os.path.join(BASE, 'website.exe')
+                    elif the_platform=="Linux":
+                        script_path = os.path.join(BASE, 'website')
+                    else:
+                        script_path = os.path.join(BASE, 'website.exe')
                     print(script_path)
                     process_man = subprocess.Popen([script_path,textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),os.path.join(BASE2,storage_location+str(hashy)),'True','True',str(refetch_enabled),str(max_threads),str(hashy),'{}','{}',BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
                 else:

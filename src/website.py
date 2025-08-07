@@ -14,6 +14,7 @@ import magic
 from webpage import *
 
 
+
 def remove_unnecessary(url):
     a = urlparse(url)
     aa = str(a.scheme) + "://" if a.scheme else ""

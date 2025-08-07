@@ -10,7 +10,8 @@ html5lib
 pygame
 pygame-textinput
 pillow
-python-magic-bin
+python-magic-bin; sys_platform != "linux"
+python-magic; sys_platform == "linux"
 psutil
 asyncio
 pyinstaller
