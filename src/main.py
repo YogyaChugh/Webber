@@ -728,7 +728,7 @@ update_list(True)
 
 def run_process_man(url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages):
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        script_path = os.path.join(BASE, 'website.exe')
+        script_path = os.path.join(BASE, 'website')
         print(script_path)
         process_ji = subprocess.Popen([script_path, url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages, BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
     else:
@@ -1524,7 +1524,7 @@ while True:
                                         break
                                 if dothat:
                                     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-                                        script_path = os.path.join(BASE, 'webview_launch.exe')
+                                        script_path = os.path.join(BASE, 'webview_launch')
                                         print(script_path)
                                         process = subprocess.Popen([script_path, j[-2]['file_location'],f'Webber - {j[-2]['hash']}'],creationflags=subprocess.CREATE_NO_WINDOW)
                                     else:
@@ -2047,7 +2047,7 @@ while True:
                 recalculate()
                 hashy = random.randint(500000,2000000)
                 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-                    script_path = os.path.join(BASE, 'website.exe')
+                    script_path = os.path.join(BASE, 'website')
                     print(script_path)
                     process_man = subprocess.Popen([script_path,textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),os.path.join(BASE2,storage_location+str(hashy)),'True','True',str(refetch_enabled),str(max_threads),str(hashy),'{}','{}',BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
                 else:

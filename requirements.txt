@@ -10,7 +10,7 @@ html5lib
 pygame
 pygame-textinput
 pillow
-python-magic-bin
+python-magic
 psutil
 asyncio
 pyinstaller
