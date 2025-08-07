@@ -86,6 +86,7 @@ class Website:
     ab = 0
     max_threads = 50
     sema = None
+    base_loc = ""
 
     def __init__(self,settings):
         # Frequently used ones stored !
@@ -150,8 +151,8 @@ class Website:
         a = str(base.path)
         a = a.replace('\\','/')
         b = os.path.dirname(a)
-        self.special.write(f'\nnext is given: {next} with base url as {base.geturl()} with dirname: {b} and hostname {str(base.hostname)}')
-        self.special.flush()
+        # self.special.write(f'\nnext is given: {next} with base url as {base.geturl()} with dirname: {b} and hostname {str(base.hostname)}')
+        # self.special.flush()
         temp = str(base.scheme) + ("://" if base.scheme else "")+ str(base.hostname)
         temp2 = os.path.join(b, next).replace("\\",'/')
         if temp2.startswith('/'):
@@ -288,14 +289,19 @@ class Website:
                     t.join()
                     self.other_threads.remove(t)
 
+                self.special.write(f"\n\n\n\nCHILDREN FOR {web_page.url.geturl()} : {web_page.children}\n\n\n\n")
+                self.special.flush()
+                d = []
                 for i in web_page.children:
                     # print('Replaced ',i[0],' with ',i[1])
-                    web_page.content = web_page.content.replace(i[0], i[1])
-                    # print('\nReplaced !!\n')
-                    # print("p"+i[0]+"\n")
-                    # print("n"+i[1]+"\n")
-                    self.special.write(f"Replaced {i[0]} with {i[1]}")
-                    self.special.flush()
+                    if i[0] not in d:
+                        web_page.content = web_page.content.replace(i[0], i[1])
+                        # print('\nReplaced !!\n')
+                        # print("p"+i[0]+"\n")
+                        # print("n"+i[1]+"\n")
+                        self.special.write(f"Replaced {i[0]} with {i[1]}")
+                        self.special.flush()
+                        d.append(i[0])
 
                 web_page.save_file(ppp[0], ppp[1], web_page.content, web_page.file_type)
                 self.logs.append(f"Download Success | {web_page.url.geturl()} |")
@@ -308,8 +314,13 @@ class Website:
                 # print('problem')
                 self.ab -= 1
                 self.logs.append(f"Download Failed | {web_page.url.geturl()} |")
-                if not isinstance(e, urllib.error.HTTPError) and not e.code == 404:
-                    print(f"$@Download Failed | {web_page.url.geturl()} |$@", flush=True)
+                print(f"$@Download Failed | {web_page.url.geturl()} |$@", flush=True)
+                # except:
+                try:
+                    if not isinstance(e, urllib.error.HTTPError) and not e.code == 404:
+                        print(f"$@Download Failed | {web_page.url.geturl()} |$@", flush=True)
+                except:
+                    pass
                 self.special.write(f"Download Failed | {web_page.url.geturl()} |")
                 self.special.flush()
                 self.webpages_scraped[web_page.prev_link] = (web_page, False, False)
@@ -328,27 +339,30 @@ class Website:
                     print("$@No Internet Connection !!$@", flush=True)
                 
     def check_and_call(self, web_page, url, main=True, last_try=False):
+        # self.special.write(f"\n\n\n\n\nCHECKING THE KIDDY: {url}\n\n\n\n")
         with self.sema:
+            the_simple_url = url
             url = remove_unnecessary(url)
             url2 = self.smart_urljoin(web_page.url, url)
             url3 = None
             if main:
                 url3 = self.smart_urljoin(self.url, url)
             # print('New: ',url2)
-            self.special.write(f'\nNEW: {url2}')
-            self.special.flush()
+            # self.special.write(f'\nNEW: {url2}')
+            # self.special.flush()
             try:
                 if self.stopped:
                     return
                 to_be_done = True
-                if url in self.resources_downloaded:
-                    temp = self.resources_downloaded.get(url)
-                    if temp and temp[2]:
+                if the_simple_url in self.resources_downloaded:
+                    temp = self.resources_downloaded.get(the_simple_url)
+                    if temp and temp[2] and temp[5] != os.path.join(web_page.file_location, web_page.fileName):
                         # print(f"Skipped | {url} |")
                         to_be_done = False
                         file_path = os.path.join(web_page.file_location, web_page.fileName)
 
-                        web_page.children.append([url, os.path.relpath(temp[4], os.path.join(web_page.file_location, web_page.fileName)).replace("\\","/")])
+                        web_page.children.append([the_simple_url, os.path.relpath(temp[4], web_page.file_location).replace("\\","/")])
+                        # self.special.write(f"\n\nFor {the_simple_url} with { os.path.relpath(temp[4], web_page.file_location).replace("\\","/")} where the details are:\n\n1st: {temp[4]} and {web_page.file_location}")
                         # print(f'Sending 1 {url} to {os.path.relpath(temp[4], web_page.file_location).replace("\\","/")}')
                         self.logs.append(f"Using Cached | {url2} |")
                         print(f"$@Using Cached | {url2} |$@", flush=True)
@@ -368,10 +382,7 @@ class Website:
                             content = download_resource_safe("https://www.example.com")
                         except Exception:
                             raise exceptions.NoInternetConnection()
-                        raise exceptions.FileDownloadError(url)
-                    with open("data/file_types.json","r") as f:
-                        mimes = json.load(f)
-                        mimes = mimes['mime_types']
+                        raise exceptions.FileDownloadError(the_simple_url)
                     redo = False
                     type_file = None
                     try:
@@ -394,37 +405,41 @@ class Website:
                         content = content.decode("utf-8")
                         if type_file == "text/html":
                             content = BeautifulSoup(content, features="html5lib").prettify()
-                        elif type_file == "text/css":
-                            content = str(cssbeautifier.beautify(content))
+                        # elif type_file == "text/css":
+                        #     content = str(cssbeautifier.beautify(content))
                         elif type_file == "text/javascript":
                             content = str(jsbeautifier.beautify(content))
                         elif type_file == "text/xml" or type_file == "text/xhtml":
                             content = BeautifulSoup(content, features="xml").prettify()
 
                         if web_page.url.hostname == temporary_made_url.hostname and web_page.same_origin_deviation>0:
-                            temp = Webpage(temporary_made_url, self, type_file, web_page.same_origin_deviation-1, web_page.cors_level, url, content, web_page.download_res, web_page.download_cors_res)
+                            temp_wow = Webpage(temporary_made_url, self, type_file, web_page.same_origin_deviation-1, web_page.cors_level, the_simple_url, content, web_page.download_res, web_page.download_cors_res)
                         elif web_page.url.hostname != temporary_made_url.hostname and web_page.cors and web_page.cors_level>0:
-                            temp = Webpage(temporary_made_url, self, type_file, 0, web_page.cors_level - 1, url, content, self.settings.get('cors_download_res'), self.settings.get('cors_download_cors_res'))
+                            temp_wow = Webpage(temporary_made_url, self, type_file, 0, web_page.cors_level - 1, the_simple_url, content, self.settings.get('cors_download_res'), self.settings.get('cors_download_cors_res'))
                         else:
                             return
-                        temp2 = self.webpages_scraped.get(url)
+                        temp2 = self.webpages_scraped.get(the_simple_url)
                         if self.stopped:
                             return
-                        if temp2 and temp==temp2[0]:
+                        if temp2 and temp_wow==temp2[0]:
                             if temp2[1] or temp2[2]:
-                                web_page.children.append([url, os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")])
+                                web_page.children.append([the_simple_url, os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")])
+                                # self.special.write(f"\n\nFor {the_simple_url} with {os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")} where the details are:\n\n1st: {os.path.join(temp2[0].file_location, temp2[0].fileName)} and {web_page.file_location}")
+                                # self.special.flush()
                                 print(f"$@Using Cached | {url2} |$@", flush=True)
                                 # print(f'Sending 2 {url} to {os.path.relpath(os.path.join(temp2[0].file_location, temp2[0].fileName), web_page.file_location).replace("\\","/")}')
                                 return
-                        self.webpages_scraped[url] = (temp, True, False)
-                        t = StoppableThread(target=self.download_webpage,args=(temp,))
+                        self.webpages_scraped[the_simple_url] = (temp_wow, True, False)
+                        t = StoppableThread(target=self.download_webpage,args=(temp_wow,))
                         t.start()
-                        self.download_webpage(temp)
-                        some = temp.create_offline_location(temp.url, type_file, True)
-                        web_page.children.append([url,os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location)])
+                        # self.download_webpage(temp_wow)
+                        some = temp_wow.create_offline_location(temp_wow.url, type_file, True)
+                        web_page.children.append([the_simple_url, os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location)])
+                        # self.special.write(f"\n\nFor {the_simple_url} with {os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location)} where the details are:\n\n1st: {os.path.join(some[0],some[1])} and {web_page.file_location}")
+                        # self.special.flush()
                         # print(f'Sending 3 {url} to {os.path.relpath(os.path.join(some[0],some[1]), web_page.file_location)}')
                         # print(f'THREAD | {url} |')
-                        self.threads.append((url, t))
+                        self.threads.append((the_simple_url, t))
                         # print(f"Success started for {url}")
                         if self.settings.get('maintain_logs'):
                             self.logger.write(f"\n\nDownloading Webpage | {new_url} |")
@@ -434,7 +449,7 @@ class Website:
                             if self.settings.get('maintain_logs'):
                                 self.logger.write(f"\n\nDownloading Resource | {new_url} |")
                                 self.logger.flush()
-                            self.resources_downloaded[url] = (new_url, True, False, type_file, None)
+                            self.resources_downloaded[the_simple_url] = (new_url, True, False, type_file, None,os.path.join(web_page.file_location,web_page.fileName))
                             temp_location = os.path.join(web_page.file_location, web_page.fileName)
                             a_temp = web_page.download_resource(new_url, type_file, content)
                             location, file_name = web_page.create_offline_location(temporary_made_url, type_file)
@@ -442,19 +457,21 @@ class Website:
                                 return
                             try:
                                 web_page.save_file(location, file_name, a_temp.get('file_content'), a_temp.get('file_type'))
-                                self.resources_downloaded[url] = (new_url, False, True, type_file, os.path.join(location, file_name))
+                                self.resources_downloaded[the_simple_url] = (new_url, False, True, type_file, os.path.join(location, file_name), os.path.join(web_page.file_location, web_page.fileName))
                             except:
-                                self.resources_downloaded[url] = (new_url, False, False, type_file, os.path.join(location, file_name))
+                                self.resources_downloaded[the_simple_url] = (new_url, False, False, type_file, os.path.join(location, file_name), os.path.join(web_page.file_location, web_page.fileName))
 
-                            web_page.children.append([url, os.path.relpath(os.path.join(location, file_name), os.path.join(web_page.file_location, web_page.fileName)).replace("\\","/")])
+                            web_page.children.append([the_simple_url, os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/")])
+                            # self.special.write(f"\n\nFor {the_simple_url} with {os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/")} where the details are:\n\n1st: {os.path.join(location, file_name)} and {web_page.file_location}")
+                            # self.special.flush()
                             # print(f'Sending 4 {url} to {os.path.relpath(os.path.join(location, file_name), web_page.file_location).replace("\\","/")}')
 
                             if self.settings.get('maintain_logs'):
                                 self.logger.write(f"\n\nDownload Complete | {new_url} |")
                                 self.logger.flush()
-                            self.logs.append(f"Resource Download Success | {url} |")
+                            self.logs.append(f"Resource Download Success | {the_simple_url} |")
                             print(f"$@Resource Download Success | {url2} |$@", flush=True)
-                            self.special.write(f"Resource Download Success | {url} |")
+                            self.special.write(f"Resource Download Success | {the_simple_url} |")
                             self.special.flush()
                         else:
                             pass
@@ -462,12 +479,17 @@ class Website:
                             # print(f"CORS RES: {web_page.download_cors_res}")
             except Exception as e:
                 if main:
+                    # self.special.write(f"\n\n\n\naaaaaaaa: {url}\n\n\n\n")
                     self.check_and_call(web_page, url3, False)
                 if not main:
-                    self.logs.append(f"Resource Download Failed | {url} |")
-                    if not isinstance(e, urllib.error.HTTPError) and not e.code==404:
-                        print(f"$@Resource Download Failed | {url2} |$@", flush=True)
-                    self.special.write(f"Resource Download Failed | {url} |")
+                    self.logs.append(f"Resource Download Failed | {the_simple_url} |")
+                    print(f"$@Resource Download Failed | {url2} |$@", flush=True)
+                    try:
+                        if not isinstance(e, urllib.error.HTTPError) and not e.code==404:
+                            print(f"$@Resource Download Failed | {url2} |$@", flush=True)
+                    except:
+                        pass
+                    self.special.write(f"Resource Download Failed | {the_simple_url} |")
                     self.special.flush()
                     if self.settings.get('maintain_logs'):
                         exc_type, exc_value, exc_tb = sys.exc_info()
@@ -477,7 +499,7 @@ class Website:
                         else:
                             exception_string = f"Error: {e.args[0]} \nExtra: Couldn't traceback"
                         # print(f"Failed | {url} |")
-                        self.logger.write(f"\n\nDownload Failed | {url} |\n\n")
+                        self.logger.write(f"\n\nDownload Failed | {the_simple_url} |\n\n")
                         self.logger.write(f"\nError: {exception_string}")
                         self.logger.flush()
                 
@@ -553,30 +575,132 @@ class Website:
                 pass
             # self.logs.append(f"Deleted Website | {self.url.geturl()} |")
 
-def main(website_name):
+# def main(website_name):
 
-    # Open settings file
-    try:
-        with open("data/settings.json") as file:
-            url = json.load(file)
-        settings = url.get(website_name)
-    except:
-        return None
-    #! SET file_types of mime as os env
-    with open("data/file_types.json",'r') as file_tp:
-        a = json.load(file_tp)
-    os.environ['file_types'] = str(a['file_types_to_mime'])
+#     # Open settings file
+#     try:
+#         with open("data/settings.json") as file:
+#             url = json.load(file)
+#         settings = url.get(website_name)
+#     except:
+#         return None
+#     #! SET file_types of mime as os env
+#     # with open("data/file_types.json",'r') as file_tp:
+#     #     a = json.load(file_tp)
 
-    # Website creation & download !
-    website = Website(settings)
-    success = website.download()
-    if success:
-        return os.path.join(website.index_file_location, "index.html")
-    else:
-        return None
+#     # Website creation & download !
+#     website = Website(settings)
+#     success = website.download()
+#     if success:
+#         return os.path.join(website.index_file_location, "index.html")
+#     else:
+#         return None
 
 
 if __name__ == "__main__":
+    os.environ['file_types'] = str({
+      ".DOC": "application/msword",
+      ".DOCX": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ".EML": "message/rfc822",
+      ".ODT": "application/vnd.oasis.opendocument.text",
+      ".PAGES": "application/vnd.apple.pages",
+      ".RTF": "application/rtf",
+      ".TEX": "text/x-tex",
+      ".TXT": "text/plain",
+      ".WPD": "application/vnd.wordperfect",
+      ".CSV": "text/csv",
+      ".KEY": "application/pgp-keys",
+      ".MPP": "application/vnd.ms-project",
+      ".PPT": "application/vnd.ms-powerpoint",
+      ".PPTX": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      ".TAR": "application/x-tar",
+      ".VCF": "text/vcard",
+      ".XML": "application/xml",
+      ".AIF": "audio/x-aiff",
+      ".FLAC": "audio/flac",
+      ".M3U": "audio/mpegurl",
+      ".M4A": "audio/mp4",
+      ".MID": "audio/sp-midi",
+      ".MP3": "audio/mpeg",
+      ".OGG": "audio/ogg",
+      ".WAV": "audio/x-wav",
+      ".WMA": "audio/x-ms-wma",
+      ".3GP": "audio/3gpp",
+      ".ASF": "application/vnd.ms-asf",
+      ".AVI": "video/x-msvideo",
+      ".FLV": "video/x-flv",
+      ".M4V": "video/mp4",
+      ".MOV": "video/quicktime",
+      ".MP4": "video/mp4",
+      ".MPG": "video/mpeg",
+      ".SRT": "text/plain",
+      ".SWF": "application/vnd.adobe.flash.movie",
+      ".TS": "text/vnd.trolltech.linguist",
+      ".WMV": "video/x-ms-wmv",
+      ".3DM": "text/vnd.in3d.3dml",
+      ".DAE": "model/vnd.collada+xml",
+      ".OBJ": "model/obj",
+      ".BMP": "image/bmp",
+      ".DCM": "application/dicom",
+      ".DJVU": "image/vnd.djvu",
+      ".GIF": "image/gif",
+      ".HEIC": "image/heic",
+      ".JPG": "image/jpeg",
+      ".PNG": "image/png",
+      ".PSD": "image/vnd.adobe.photoshop",
+      ".TIF": "image/tiff",
+      ".AI": "application/postscript",
+      ".CDR": "image/x-coreldraw",
+      ".EMF": "image/emf",
+      ".EPS": "application/postscript",
+      ".PS": "application/postscript",
+      ".SVG": "image/svg+xml",
+      ".OXPS": "application/oxps",
+      ".PDF": "application/pdf",
+      ".PUB": "application/vnd.exstream-package",
+      ".XPS": "application/vnd.ms-xpsdocument",
+      ".NUMBERS": "application/vnd.apple.numbers",
+      ".ODS": "application/vnd.oasis.opendocument.spreadsheet",
+      ".XLS": "application/vnd.ms-excel",
+      ".XLSX": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ".MDB": "application/msaccess",
+      ".ODB": "application/vnd.oasis.opendocument.base",
+      ".PDB": "chemical/x-pdb",
+      ".SQL": "application/sql",
+      ".SQLITE": "application/vnd.sqlite3",
+      ".APK": "application/vnd.android.package-archive",
+      ".BAT": "application/x-msdos-program",
+      ".BIN": "application/octet-stream",
+      ".EXE": "application/x-msdos-program",
+      ".JAR": "application/java-archive",
+      ".SH": "text/x-sh",
+      ".GAM": "chemical/x-gamess-input",
+      ".PKG": "application/vnd.apple.installer+xml",
+      ".DWG": "image/vnd.dwg",
+      ".DXF": "image/vnd.dxf",
+      ".STEP": "model/step",
+      ".STL": "model/stl",
+      ".STP": "model/step",
+      ".KML": "application/vnd.google-earth.kml+xml",
+      ".KMZ": "application/vnd.google-earth.kmz",
+      ".OSM": "application/vnd.openstreetmap.data+xml",
+      ".CER": "application/pkix-cert",
+      ".CSS": "text/css",
+      ".HTML": "text/html",
+      ".JS": "text/javascript",
+      ".JSON": "application/json",
+      ".XHTML": "application/xhtml+xml",
+      ".XPI": "application/x-xpinstall",
+      ".OTF": "font/otf",
+      ".TTF": "font/ttf",
+      ".WOFF": "font/woff",
+      ".WOFF2": "font/woff2",
+      ".CAB": "application/vnd.ms-cab-compressed",
+      ".CPL": "application/cpl+xml",
+      ".DLL": "application/x-msdos-program",
+      ".DMP": "application/vnd.tcpdump.pcap",
+      ".ICO": "image/vnd.microsoft.icon"
+    })
     settings = {
         "url": sys.argv[1],
         "download_res": eval(sys.argv[2]),
@@ -597,4 +721,5 @@ if __name__ == "__main__":
     a = Website(settings)
     a.resources_downloaded = eval(sys.argv[15])
     a.webpages_scraped = eval(sys.argv[16])
+    a.base_loc = sys.argv[17]
     a.download()

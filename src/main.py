@@ -20,12 +20,17 @@ import webbrowser
 from pathlib import Path
 
 
+OTHER_OPEN_WINDOWS = []
+
 MAX_WEBSITES = 2
 
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     BASE = str(Path(sys._MEIPASS))
 else:
     BASE = os.path.abspath(Path(__file__).parent.parent)
+    print('hoye')
+
+BASE2 = os.getcwd()
 
 
 # BASE = getattr(sys, '_MEIPASS', os.path.abspath('.'))
@@ -100,7 +105,8 @@ main_logoji = pygame.image.load(os.path.join(BASE,"assets/main_logo_webber.png")
 logo = pygame.image.load(os.path.join(BASE,"assets/spider_logo_main.png"))
 logo3 = pygame.transform.scale(logo, (96, 96))
 logo2 = pygame.transform.scale(logo, (64,64))
-pygame.display.set_icon(logo)
+iconman = pygame.image.load(os.path.join(BASE, "assets/Webber.ico"))
+pygame.display.set_icon(iconman)
 pygame.display.set_caption("Webber")
 
 aleft = pygame.image.load(os.path.join(BASE,"assets/leftji.png"))
@@ -426,9 +432,9 @@ circle_rect = pygame.draw.circle(screen, (30, 28, 34), (795, 83), 28)
 circle_rectl = pygame.draw.circle(screen, (30, 28, 34), (795+125+35, 83-35), 28)
 
 
-with open(os.path.join(BASE,"data/file_types.json"),'r') as file_tp:
-        a = json.load(file_tp)
-os.environ['file_types'] = str(a['file_types_to_mime'])
+# with open(os.path.join(BASE,"data/file_types.json"),'r') as file_tp:
+#         a = json.load(file_tp)
+# os.environ['file_types'] = str(a['file_types_to_mime'])
     
 
 loading_allow = False
@@ -598,9 +604,9 @@ def read_logs(hash):
                     websites[hash][3] = 0
                     completed.append(hash)
                     puppy = websites[hash][0]
-                    if os.path.isdir(storage_location + str(hash)):
+                    if os.path.isdir(puppy['location']):
                         try:
-                            shutil.rmtree(storage_location + str(hash))
+                            shutil.rmtree(puppy['location'])
                         except:
                             pass
                     with open('data/details.json','r') as mumbai:
@@ -724,10 +730,12 @@ update_list(True)
 
 def run_process_man(url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages):
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'website.py'))
+        script_path = os.path.join(BASE, 'website.exe')
+        print(script_path)
+        process_ji = subprocess.Popen([script_path, url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages, BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
     else:
-        script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'src/website.py'))
-    process_ji = subprocess.Popen(['python', script_path, url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages],stdout=subprocess.PIPE,creationflags=subprocess.CREATE_NO_WINDOW)
+        script_path = 'src/website.py'
+        process_ji = subprocess.Popen(['python', script_path, url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages, BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
     websites[eval(hash)][4] = process_ji
     websites[eval(hash)][8] = threading.Thread(target=read_logs,args=(eval(hash),),daemon=True)
     websites[eval(hash)][8].start()
@@ -1518,10 +1526,13 @@ while True:
                                         break
                                 if dothat:
                                     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-                                        script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'webview_launch.py'))
+                                        script_path = os.path.join(BASE, 'webview_launch.exe')
+                                        print(script_path)
+                                        process = subprocess.Popen([script_path, j[-2]['file_location'],f'Webber - {j[-2]['hash']}'],creationflags=subprocess.CREATE_NO_WINDOW)
                                     else:
-                                        script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'src/webview_launch.py'))
-                                    process = subprocess.Popen(['python', script_path, j[-2]['file_location'],f'Webber - {j[-2]['hash']}'],creationflags=subprocess.CREATE_NO_WINDOW)
+                                        script_path = 'src/webview_launch.py'
+                                        process = subprocess.Popen(['python', script_path, j[-2]['file_location'],f'Webber - {j[-2]['hash']}'],creationflags=subprocess.CREATE_NO_WINDOW)
+                                    OTHER_OPEN_WINDOWS.append(process)
                                     total_lists[j[-2]['hash']] = ([j[-2]['file_location'],process])
                                     clicked.append(j[-2]['hash'])
                                     pygame.draw.rect(screen, (211, 214, 219), (i[0]+685,i[1]+14, 180, 50), border_radius=12)
@@ -1540,6 +1551,7 @@ while True:
                                 if apboi:
                                     try:
                                         psutil.Process(apboi[1].pid).terminate()
+                                        OTHER_OPEN_WINDOWS.remove(apboi[1])
                                     except:
                                         pass
                                     j[0][0] = 50
@@ -1581,9 +1593,9 @@ while True:
                         
                         if (j[8] and event.pos[0]>i[0]+230 and event.pos[0]<i[0]+410 and event.pos[1]>i[1]+135 and event.pos[1]<i[1]+185):
                             puppy = j[7]
-                            if os.path.isdir(storage_location+str(puppy['hash'])):
+                            if os.path.isdir(puppy['location']):
                                 try:
-                                    shutil.rmtree(storage_location+str(puppy['hash']))
+                                    shutil.rmtree(puppy['location'])
                                 except Exception as e:
                                     # print(e)
                                     # print("location: ", storage_location+str(puppy['hash']))
@@ -1659,6 +1671,7 @@ while True:
                                         if websites[dosa][4] and not websites[dosa][4].poll():
                                             try:
                                                 psutil.Process(websites[dosa][4].pid).terminate()
+                                                OTHER_OPEN_WINDOWS.remove(websites[dosa][4])
                                             except:
                                                 pass
                                         obj1 = font.render("="*40, True, (0,0,139))
@@ -1686,12 +1699,13 @@ while True:
                                     if websites[dosa][4] and not websites[dosa][4].poll():
                                         try:
                                             psutil.Process(websites[dosa][4].pid).terminate()
+                                            OTHER_OPEN_WINDOWS.remove(websites[dosa][4])
                                         except:
                                             pass
                                     # del websites[dosa]
-                                    if os.path.isdir(storage_location+str(dosa)):
+                                    if os.path.isdir(websites[dosa][0]['location']):
                                         try:
-                                            shutil.rmtree(storage_location+str(dosa))
+                                            shutil.rmtree(websites[dosa][0]['location'])
                                         except Exception as e:
                                             pass
                                     website_being_downloaded = None
@@ -1880,6 +1894,7 @@ while True:
                             if websites[website_being_downloaded][4] and not websites[website_being_downloaded][4].poll():
                                 try:
                                     psutil.Process(websites[website_being_downloaded][4].pid).terminate()
+                                    OTHER_OPEN_WINDOWS.remove(websites[website_being_downloaded][4])
                                 except:
                                     pass
                             obj1 = font.render("="*40, True, (0,0,139))
@@ -1906,11 +1921,12 @@ while True:
                         if websites[website_being_downloaded][4] and not websites[website_being_downloaded][4].poll():
                             try:
                                 psutil.Process(websites[website_being_downloaded][4].pid).terminate()
+                                OTHER_OPEN_WINDOWS.remove(websites[website_being_downloaded][4])
                             except:
                                 pass
-                        if os.path.isdir(storage_location+str(website_being_downloaded)):
+                        if os.path.isdir(websites[website_being_downloaded][0]['location']):
                             try:
-                                shutil.rmtree(storage_location+str(website_being_downloaded))
+                                shutil.rmtree(websites[website_being_downloaded][0]['location'])
                             except Exception as e:
                                 pass
                         # del websites[website_being_downloaded]
@@ -2032,10 +2048,12 @@ while True:
                 recalculate()
                 hashy = random.randint(500000,2000000)
                 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-                    script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'website.py'))
+                    script_path = os.path.join(BASE, 'website.exe')
+                    print(script_path)
+                    process_man = subprocess.Popen([script_path,textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),os.path.join(BASE2,storage_location+str(hashy)),'True','True',str(refetch_enabled),str(max_threads),str(hashy),'{}','{}',BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
                 else:
-                    script_path = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__),os.path.join(BASE, 'src/website.py'))
-                process_man = subprocess.Popen(['python', script_path,textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),storage_location+str(hashy),'True','True',str(refetch_enabled),str(max_threads),str(hashy),'{}','{}'],stdout=subprocess.PIPE,creationflags=subprocess.CREATE_NO_WINDOW)
+                    script_path = 'src/website.py'
+                    process_man = subprocess.Popen(['python', script_path,textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),os.path.join(BASE2,storage_location+str(hashy)),'True','True',str(refetch_enabled),str(max_threads),str(hashy),'{}','{}',BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
                 website_being_downloaded = hashy
                 urlji = urllib.parse.quote(textinput.value.replace("\\","/"), safe=":/()=-$#';\\`~!@%,.^&+={}[]")
                 atempo = urllib.parse.urlparse(urlji)
@@ -2053,7 +2071,7 @@ while True:
                     "max_cors": Max_cors,
                     "max_threads": max_threads,
                     "same_origin_deviation": same_origin_crawl_limit,
-                    "location": storage_location+str(hashy),
+                    "location": os.path.join(BASE2, storage_location+str(hashy)),
                     "maintain_logs": True,
                     "show_failed_files": True,
                     "refetch": refetch_enabled,
@@ -2197,6 +2215,7 @@ while True:
                             if websites[jjman][4] and not websites[jjman][4].poll():
                                 try:
                                     psutil.Process(websites[jjman][4].pid).terminate()
+                                    OTHER_OPEN_WINDOWS.remove(websites[jjman][4])
                                 except:
                                     pass
                             with open('data/details.json','r') as asta:
@@ -2209,6 +2228,11 @@ while True:
                             del websites[jjman]
                         except:
                             pass
+                for bingo in OTHER_OPEN_WINDOWS:
+                    try:
+                        psutil.Process(bingo.pid).terminate()
+                    except:
+                        pass
                 time.sleep(0.3)
                 sys.exit()
         if event.type == DELETE_IT:
