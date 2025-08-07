@@ -1,7 +1,7 @@
 <!-- PROJECT LOGO -->
 <div align="center">
   <a href="https://github.com/YogyaChugh/Webber">
-    <img src="assets/spider_logo_main.png" alt="Logo" width="150" height="150">
+    <img src="assets/main_logo_webber.png" alt="Logo" width="150" height="150">
   </a>
 
   <h1 align="center">Webber</h3>
