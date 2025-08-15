@@ -741,6 +741,8 @@ def run_process_man(url, download_res, download_cors_res, cors, cors_download_re
             script_path = os.path.join(BASE, 'website.exe')
         elif the_platform=="Linux":
             script_path = os.path.join(BASE, 'website')
+        elif the_platform=="Mac":
+            script_path = os.path.join(BASE, "website.dmg")
         else:
             script_path = os.path.join(BASE, 'website.exe')
         print(script_path)
@@ -1542,6 +1544,8 @@ while True:
                                             script_path = os.path.join(BASE, 'webview_launch.exe')
                                         elif the_platform=="Linux":
                                             script_path = os.path.join(BASE, 'webview_launch')
+                                        elif the_platform=="Mac":
+                                            script_path = os.path.join(BASE, 'webview_launch.dmg')
                                         else:
                                             script_path = os.path.join(BASE, 'webview_launch.exe')
                                         print(script_path)
@@ -2070,6 +2074,8 @@ while True:
                         script_path = os.path.join(BASE, 'website.exe')
                     elif the_platform=="Linux":
                         script_path = os.path.join(BASE, 'website')
+                    elif the_platform=="Mac":
+                        script_path = os.path.join(BASE, 'website.dmg')
                     else:
                         script_path = os.path.join(BASE, 'website.exe')
                     print(script_path)
