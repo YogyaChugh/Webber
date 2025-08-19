@@ -9,8 +9,6 @@
   <img src="https://hackatime-badge.hackclub.com/U09218J0E94/Webber" alt="Typing animation"><br>
     A simple & easy way to download websites locally so you don't have to stay online all the time.
     <br />
-    <a href="https://github.com/YogyaChugh/Webber"><strong>Explore the docs »</strong></a>
-    <br />
   </p>
 </div>
 
