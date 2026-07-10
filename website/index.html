@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webber - Offline Website Downloader</title>
+    <meta name="description" content="A simple & easy way to download websites locally so you don't have to stay online all the time.">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background">
+        <div class="mesh-gradient"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <nav class="navbar">
+        <div class="logo">
+            <span class="logo-text">WEB<span class="text-accent">BER</span></span>
+        </div>
+        <div class="nav-links">
+            <a href="#about">About</a>
+            <a href="#how-it-works">How it Works</a>
+            <a href="https://webber-credits.onrender.com" target="_blank">Credits</a>
+            <a href="https://github.com/YogyaChugh/Webber" target="_blank" class="github-link">GitHub</a>
+        </div>
+    </nav>
+
+    <main class="hero">
+        <div class="container hero-layout">
+            <div class="hero-text fade-in">
+                <div class="badge pulse-animation">
+                    <span class="status-dot"></span> Offline Ready
+                </div>
+                <h1 class="main-title">Take the web <br><span class="text-gradient">offline.</span></h1>
+                <p class="subtitle">A simple & easy way to download websites locally. Read documentation, save articles, and cut yourself off from the internet without losing access to your favorite sites.</p>
+                
+                <div class="action-buttons">
+                    <a href="#download" class="btn btn-primary">Download App</a>
+                    <a href="https://github.com/YogyaChugh/Webber#getting-started" target="_blank" class="btn btn-outline">View Docs</a>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-val">100%</span>
+                        <span class="stat-label">Local</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-val">Fast</span>
+                        <span class="stat-label">Multi-threaded</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-val">GUI</span>
+                        <span class="stat-label">Included</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hero-visual fade-in delay-2">
+                <div class="app-mockup glass-card">
+                    <div class="mockup-header">
+                        <div class="traffic-lights">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="address-bar">https://example.com</div>
+                    </div>
+                    <div class="mockup-body">
+                        <div class="terminal">
+                            <p class="prompt"><span class="user">webber</span>@<span class="host">local</span>:~$ python src/website.py https://example.com</p>
+                            <p class="output">[INFO] Starting Webber Engine...</p>
+                            <p class="output">[INFO] Fetching https://example.com</p>
+                            <p class="output">[INFO] Found 14 assets (CSS, JS, Images)</p>
+                            <p class="output progress">Downloading: [████████████████████] 100%</p>
+                            <p class="output success">[SUCCESS] Website saved locally to ./example_com</p>
+                            <p class="prompt animate-blink">_</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section id="how-it-works" class="features-section">
+        <div class="container">
+            <h2 class="section-heading">Powerful Features</h2>
+            <div class="feature-grid">
+                <div class="feature-box glass-card card-hover">
+                    <div class="icon-wrapper green-bg">🚀</div>
+                    <h3>Multi-threaded</h3>
+                    <p>Uses up to 500 threads depending on your system to fetch assets blazing fast.</p>
+                </div>
+                <div class="feature-box glass-card card-hover">
+                    <div class="icon-wrapper purple-bg">🎨</div>
+                    <h3>GUI & CLI Support</h3>
+                    <p>Prefer a visual interface? We have a Pygame window. Love the terminal? We got you covered.</p>
+                </div>
+                <div class="feature-box glass-card card-hover">
+                    <div class="icon-wrapper blue-bg">🔗</div>
+                    <h3>CORS & Deep Linking</h3>
+                    <p>Configurable depths, same-origin deviation, and Cross-Origin Resource Sharing handling.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="download" class="download-section">
+        <div class="container">
+            <div class="download-wrapper glass-card">
+                <h2>Download Webber</h2>
+                <p class="download-sub">Get the precompiled executables directly from GitHub Releases.</p>
+                
+                <div class="os-downloads">
+                    <a href="https://github.com/YogyaChugh/Webber/releases/latest" class="os-btn">
+                        <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        <span>Windows</span>
+                    </a>
+                    <a href="https://github.com/YogyaChugh/Webber/releases/latest" class="os-btn">
+                        <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"></path><path d="M10 2c1 .5 2 2 2 5"></path></svg>
+                        <span>macOS</span>
+                    </a>
+                    <a href="https://github.com/YogyaChugh/Webber/releases/latest" class="os-btn">
+                        <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2a4 4 0 0 1 4 4c0 1.5-1 3-2 5-1-2-3-2-4 0-1-2-2-3.5-2-5a4 4 0 0 1 4-4Z"></path><path d="M16 11c1-1.5 2-2 3-1.5s2 2 1.5 4-3 5-5 5-2-3-4-3-2 3-4 3-2-2-1.5-4 1.5-2.5 3-1 1 2.5 3 2.5 2-1.5 3-2.5Z"></path></svg>
+                        <span>Linux</span>
+                    </a>
+                </div>
+                
+                <div class="developer-install">
+                    <p>Or install from source via Python</p>
+                    <div class="cli-copy" id="copy-btn">
+                        <code>git clone https://github.com/YogyaChugh/Webber.git && cd Webber && pip install -r requirements.txt</code>
+                        <span class="copy-icon">📋</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container footer-content">
+            <p>&copy; 2026 Yogya Chugh. All rights reserved.</p>
+            <p>Made with Python, Pygame, and BeautifulSoup.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

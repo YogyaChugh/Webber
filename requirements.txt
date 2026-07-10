@@ -1,6 +1,5 @@
 urlextract
 urllib3
-bs4
 cssbeautifier
 jsbeautifier
 chardet
@@ -15,3 +14,4 @@ python-magic; sys_platform == "linux"
 psutil
 asyncio
 pyinstaller
+beautifulsoup4

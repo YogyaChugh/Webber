@@ -1,3 +1,5 @@
+import multiprocessing
+multiprocessing.freeze_support()
 import os
 os.makedirs('data',exist_ok=True)
 os.makedirs('sites',exist_ok=True)
@@ -734,22 +736,16 @@ def update_list(main=False):
 
 update_list(True)
 
+def get_script(script_name):
+    """Returns [executable, script_path] for onefile mode."""
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        return [sys.executable, os.path.join(sys._MEIPASS, 'src', script_name)]
+    else:
+        return [sys.executable, os.path.join('src', script_name)]
+
 
 def run_process_man(url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages):
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        if the_platform=="Windows":
-            script_path = os.path.join(BASE, 'website.exe')
-        elif the_platform=="Linux":
-            script_path = os.path.join(BASE, 'website')
-        elif the_platform=="Mac":
-            script_path = os.path.join(BASE, "website.dmg")
-        else:
-            script_path = os.path.join(BASE, 'website.exe')
-        print(script_path)
-        process_ji = subprocess.Popen([script_path, url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages, BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
-    else:
-        script_path = 'src/website.py'
-        process_ji = subprocess.Popen(['python', script_path, url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages, BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
+    process_ji = subprocess.Popen([*get_script('website.py'), url, download_res, download_cors_res, cors, cors_download_res, cors_download_cors_res, max_cors, same_origin_deviation, location, maintain_logs, show_failed_files, refetch, hash, max_threads, resources, webpages, BASE], stdout=subprocess.PIPE, stdin=subprocess.DEVNULL)
     websites[eval(hash)][4] = process_ji
     websites[eval(hash)][8] = threading.Thread(target=read_logs,args=(eval(hash),),daemon=True)
     websites[eval(hash)][8].start()
@@ -1539,20 +1535,7 @@ while True:
                                         dothat = False
                                         break
                                 if dothat:
-                                    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-                                        if the_platform=="Windows":
-                                            script_path = os.path.join(BASE, 'webview_launch.exe')
-                                        elif the_platform=="Linux":
-                                            script_path = os.path.join(BASE, 'webview_launch')
-                                        elif the_platform=="Mac":
-                                            script_path = os.path.join(BASE, 'webview_launch.dmg')
-                                        else:
-                                            script_path = os.path.join(BASE, 'webview_launch.exe')
-                                        print(script_path)
-                                        process = subprocess.Popen([script_path, j[-2]['file_location'],f'Webber - {j[-2]['hash']}'])
-                                    else:
-                                        script_path = 'src/webview_launch.py'
-                                        process = subprocess.Popen(['python', script_path, j[-2]['file_location'],f'Webber - {j[-2]['hash']}'])
+                                    process = subprocess.Popen([*get_script('webview_launch.py'), j[-2]['file_location'], f'Webber - {j[-2]["hash"]}'])
                                     OTHER_OPEN_WINDOWS.append(process)
                                     total_lists[j[-2]['hash']] = ([j[-2]['file_location'],process])
                                     clicked.append(j[-2]['hash'])
@@ -2069,20 +2052,7 @@ while True:
                 websites_currently_in_process += 1
                 recalculate()
                 hashy = random.randint(500000,2000000)
-                if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-                    if the_platform=="Windows":
-                        script_path = os.path.join(BASE, 'website.exe')
-                    elif the_platform=="Linux":
-                        script_path = os.path.join(BASE, 'website')
-                    elif the_platform=="Mac":
-                        script_path = os.path.join(BASE, 'website.dmg')
-                    else:
-                        script_path = os.path.join(BASE, 'website.exe')
-                    print(script_path)
-                    process_man = subprocess.Popen([script_path,textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),os.path.join(BASE2,storage_location+str(hashy)),'True','True',str(refetch_enabled),str(max_threads),str(hashy),'{}','{}',BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
-                else:
-                    script_path = 'src/website.py'
-                    process_man = subprocess.Popen(['python', script_path,textinput.value,str(download_resources_enabled),str(download_cors_resources_enabled),str(cors_enabled),str(resources_for_cors),'False',str(Max_cors),str(same_origin_crawl_limit),os.path.join(BASE2,storage_location+str(hashy)),'True','True',str(refetch_enabled),str(max_threads),str(hashy),'{}','{}',BASE],stdout=subprocess.PIPE,stdin=subprocess.DEVNULL)
+                process_man = subprocess.Popen([*get_script('website.py'), textinput.value, str(download_resources_enabled), str(download_cors_resources_enabled), str(cors_enabled), str(resources_for_cors), 'False', str(Max_cors), str(same_origin_crawl_limit), os.path.join(BASE2, storage_location+str(hashy)), 'True', 'True', str(refetch_enabled), str(max_threads), str(hashy), '{}', '{}', BASE], stdout=subprocess.PIPE, stdin=subprocess.DEVNULL)
                 website_being_downloaded = hashy
                 urlji = urllib.parse.quote(textinput.value.replace("\\","/"), safe=":/()=-$#';\\`~!@%,.^&+={}[]")
                 atempo = urllib.parse.urlparse(urlji)
